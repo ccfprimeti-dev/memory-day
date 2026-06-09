@@ -85,6 +85,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     registrarFonte();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const buffer = await renderToBuffer(
       createElement(RelatorioPDF, {
         relatorio:        conteudo,
@@ -95,7 +96,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
         totalAlunos,
         alunosRegistraram,
         geradoEm,
-      })
+      }) as any
     );
 
     const nomeSeguro = relatorio.materia.nome
@@ -105,7 +106,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       .replace(/\s+/g, "-");
     const nomeArquivo = `memory-day_${nomeSeguro}_${relatorio.turma.nome.replace(/\s+/g, "-")}_${data}.pdf`;
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
         "Content-Type":        "application/pdf",

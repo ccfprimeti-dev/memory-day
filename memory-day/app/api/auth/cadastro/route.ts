@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       });
 
       const sessao = await getSessao();
-      sessao.usuario = { id: usuario.id, nome: usuario.nome, email: usuario.email, papel, turmaId };
+      sessao.usuario = { id: usuario.id, nome: usuario.nome, email: usuario.email, papel, turmaId: turmaId ?? null };
       await sessao.save();
 
       return NextResponse.json({ papel, redirectTo: "/aluno/dashboard" }, { status: 201 });

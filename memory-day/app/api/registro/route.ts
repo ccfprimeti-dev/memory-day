@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, jsonInput } from "@/lib/prisma";
 import { getSessao } from "@/lib/auth";
 import { analisarRegistroAluno } from "@/lib/ai";
 import type { RegistroPayload, FeedbackIA } from "@/types";
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
     update: {
       textoDoAluno: texto.trim(),
       feedbackIA,
-      lacunasIA,
+      lacunasIA: jsonInput(lacunasIA),
     },
     create: {
       alunoId: sessao.usuario.id,
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
       data,
       textoDoAluno: texto.trim(),
       feedbackIA,
-      lacunasIA,
+      lacunasIA: jsonInput(lacunasIA),
     },
   });
 

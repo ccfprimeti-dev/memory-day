@@ -9,7 +9,8 @@
       "Bash(dir \"c:\\\\Users\\\\ccfpr\\\\Desktop\\\\memory day\\\\memory-day\\\\app\" /s /b)",
       "Bash(npx tsc *)",
       "Bash(npx prisma *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(npx next *)"
     ]
   }
 }

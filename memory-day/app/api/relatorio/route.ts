@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, jsonInput } from "@/lib/prisma";
 import { getSessao } from "@/lib/auth";
 import { gerarRelatorioTurma } from "@/lib/ai";
 import type { RelatorioPayload } from "@/types";
@@ -101,8 +101,8 @@ export async function POST(req: NextRequest) {
   // Upsert — turmaId + subjectId + data como chave única
   const relatorio = await prisma.classReport.upsert({
     where: { turmaId_subjectId_data: { turmaId, subjectId, data } },
-    update: { conteudoIA: relatorioIA, geradoEm: new Date() },
-    create: { turmaId, subjectId, data, conteudoIA: relatorioIA },
+    update: { conteudoIA: jsonInput(relatorioIA), geradoEm: new Date() },
+    create: { turmaId, subjectId, data, conteudoIA: jsonInput(relatorioIA) },
   });
 
   return NextResponse.json(relatorio, { status: 201 });
