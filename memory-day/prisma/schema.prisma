@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Turma — entidade central que conecta alunos, professores e matérias
+// ─────────────────────────────────────────────────────────────────────────────
+model Turma {
+  id            String   @id @default(cuid())
+  nome          String           // ex: "9º A", "1º A EM"
+  anoLetivo     Int              // ex: 2026
+  nivelEnsino   String   @default("EF2") // "EF2" ou "EM"
+  codigoConvite String   @unique // reservado para entrada futura por código
+  criadoEm      DateTime @default(now())
+
+  alunos      User[]           @relation("AlunoTurma")
+  professores TurmaProfessor[]
+  materias    Subject[]
+  relatorios  ClassReport[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TurmaProfessor — relação N:N entre professores e turmas
+// ─────────────────────────────────────────────────────────────────────────────
+model TurmaProfessor {
+  turmaId     String
+  professorId String
+
+  turma     Turma @relation(fields: [turmaId],     references: [id], onDelete: Cascade)
+  professor User  @relation("ProfessorTurmas", fields: [professorId], references: [id], onDelete: Cascade)
+
+  @@id([turmaId, professorId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Usuário (aluno ou professor)
+// papel: "ALUNO" | "PROFESSOR" (String — mantido como String para compatibilidade com sessão)
+// turmaId: preenchido apenas para ALUNO; validado pela API de cadastro
+// ─────────────────────────────────────────────────────────────────────────────
+model User {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senhaHash String
+  papel     String   // "ALUNO" ou "PROFESSOR"
+  turmaId   String?  // null para PROFESSOR
+  criadoEm  DateTime @default(now())
+
+  // Aluno pertence a uma turma
+  turma    Turma?           @relation("AlunoTurma", fields: [turmaId], references: [id])
+  // Professor leciona em várias turmas (via pivot)
+  turmas   TurmaProfessor[] @relation("ProfessorTurmas")
+
+  materias  Subject[] @relation("ProfessorMaterias")
+  registros Entry[]   @relation("AlunoRegistros")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Matéria — existe no contexto de uma turma específica
+// Uma mesma disciplina (ex: "Matemática") pode existir em múltiplas turmas
+// ─────────────────────────────────────────────────────────────────────────────
+model Subject {
+  id          String  @id @default(cuid())
+  nome        String
+  turmaId     String  // matéria pertence a uma turma
+  professorId String? // professor que a leciona (null = sem professor atribuído)
+
+  turma     Turma        @relation(fields: [turmaId],     references: [id])
+  professor User?        @relation("ProfessorMaterias", fields: [professorId], references: [id])
+  registros Entry[]
+  relatorios ClassReport[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Registro diário do aluno
+// A turma é acessível via aluno.turmaId
+// ─────────────────────────────────────────────────────────────────────────────
+model Entry {
+  id           String   @id @default(cuid())
+  alunoId      String
+  subjectId    String
+  data         String   // YYYY-MM-DD
+  textoDoAluno String
+  feedbackIA   String?
+  lacunasIA    Json?    // { resumo, lacunas, sugestoes }
+  criadoEm     DateTime @default(now())
+
+  aluno   User    @relation("AlunoRegistros", fields: [alunoId],   references: [id])
+  materia Subject @relation(fields: [subjectId], references: [id])
+
+  @@unique([alunoId, subjectId, data])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Relatório agregado da turma
+// Chave: turmaId + subjectId + data  (era só subjectId + data)
+// ─────────────────────────────────────────────────────────────────────────────
+model ClassReport {
+  id         String   @id @default(cuid())
+  turmaId    String   // NEW — relatório é por turma + matéria + data
+  subjectId  String
+  data       String   // YYYY-MM-DD
+  conteudoIA Json     // { nivelGeral, lacunasComuns, recomendacoes, ... }
+  geradoEm   DateTime @default(now())
+
+  turma   Turma   @relation(fields: [turmaId],   references: [id])
+  materia Subject @relation(fields: [subjectId], references: [id])
+
+  @@unique([turmaId, subjectId, data])
+}
