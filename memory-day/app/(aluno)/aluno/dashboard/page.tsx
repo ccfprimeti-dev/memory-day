@@ -5,7 +5,7 @@ import { SelectSlot } from "@/components/aluno/SelectSlot";
 import type { FeedbackIA } from "@/types";
 
 function dataHoje(): string {
-  return new Date().toISOString().split("T")[0];
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
 }
 
 export default async function AlunoDashboard() {
@@ -35,7 +35,6 @@ export default async function AlunoDashboard() {
     orderBy: { criadoEm: "asc" },
   });
 
-  const analisados  = registrosHoje.filter((r) => r.lacunasIA !== null).length;
   const preenchidos = registrosHoje.length;
   // Slots vazios: quantas aulas ainda podem ser registradas hoje (até o limite do nível)
   const slotsVazios = Math.max(0, maxAulas - preenchidos);
@@ -54,6 +53,7 @@ export default async function AlunoDashboard() {
         <p className="text-slate-500 text-sm mt-1 capitalize">
           {new Date().toLocaleDateString("pt-BR", {
             weekday: "long", day: "numeric", month: "long", year: "numeric",
+            timeZone: "America/Sao_Paulo",
           })}
         </p>
       </div>
