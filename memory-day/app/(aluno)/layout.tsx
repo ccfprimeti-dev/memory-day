@@ -6,7 +6,9 @@ import LogoutButton from "@/components/ui/LogoutButton";
 export default async function AlunoLayout({ children }: { children: React.ReactNode }) {
   const sessao = await getSessao();
   if (!sessao.usuario) redirect("/login");
-  if (sessao.usuario.papel !== "ALUNO") redirect("/professor/dashboard");
+  if (sessao.usuario.papel === "PROFESSOR") redirect("/professor/dashboard");
+  if (sessao.usuario.papel === "ADMIN")     redirect("/admin");
+  if (sessao.usuario.papel !== "ALUNO")     redirect("/login");
 
   return (
     <div className="min-h-screen flex flex-col">

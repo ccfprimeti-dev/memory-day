@@ -23,7 +23,11 @@ export default function LoginPage() {
       });
       const dados = await res.json();
       if (!res.ok) { setErro(dados.erro ?? "Credenciais inválidas."); return; }
-      router.push(dados.papel === "ALUNO" ? "/aluno/dashboard" : "/professor/dashboard");
+      const destino =
+        dados.papel === "ALUNO"  ? "/aluno/dashboard" :
+        dados.papel === "ADMIN"  ? "/admin" :
+        "/professor/dashboard";
+      router.push(destino);
     } catch {
       setErro("Falha na conexão.");
     } finally {
@@ -146,6 +150,7 @@ export default function LoginPage() {
                 {[
                   { label: "Alunos", items: ["aluno1@escola.dev", "aluno2@escola.dev"] },
                   { label: "Professores", items: ["prof.mat@escola.dev", "prof.gram@escola.dev"] },
+                  { label: "Admin", items: ["admin@escola.dev"] },
                 ].map((col) => (
                   <div key={col.label} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
                     <p className="text-[10px] font-orbitron tracking-widest text-amber-600/70 uppercase mb-1.5">{col.label}</p>

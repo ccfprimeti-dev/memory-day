@@ -1,7 +1,7 @@
 // Tipos compartilhados entre front-end e back-end
 
 // ─── Sessão ───────────────────────────────────────────────────────────────────
-export type PapelUsuario = "ALUNO" | "PROFESSOR";
+export type PapelUsuario = "ALUNO" | "PROFESSOR" | "ADMIN";
 
 export interface SessaoUsuario {
   id:      string;
@@ -35,11 +35,15 @@ export interface MateriaResumo {
   turmaId: string;
 }
 
+// ─── Nível de desempenho classificado pela IA ────────────────────────────────
+export type NivelIA = "BASICO" | "INTERMEDIARIO" | "AVANCADO";
+
 // ─── Resposta da IA — análise do aluno ───────────────────────────────────────
 export interface FeedbackIA {
   resumo:    string;      // o que o aluno demonstrou entender
   lacunas:   string[];    // pontos que parecem estar faltando
   sugestoes: string[];    // 2-3 sugestões de estudo
+  nivel:     NivelIA;     // classificação automática da IA
 }
 
 // ─── Resposta da IA — relatório da turma ─────────────────────────────────────

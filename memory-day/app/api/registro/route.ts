@@ -82,10 +82,12 @@ export async function POST(req: NextRequest) {
   // Chama a IA para análise
   let feedbackIA: string;
   let lacunasIA: FeedbackIA;
+  let nivelIA: string;
   try {
     const analise = await analisarRegistroAluno(texto.trim(), materia.nome);
     feedbackIA = analise.resumo;
-    lacunasIA = analise;
+    lacunasIA  = analise;
+    nivelIA    = analise.nivel ?? "BASICO"; // fallback defensivo caso a IA omita o campo
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : String(erro);
     console.error("[/api/registro] Erro na IA:", mensagem);
@@ -108,6 +110,7 @@ export async function POST(req: NextRequest) {
       textoDoAluno: texto.trim(),
       feedbackIA,
       lacunasIA: jsonInput(lacunasIA),
+      nivelIA,
     },
     create: {
       alunoId: sessao.usuario.id,
@@ -116,6 +119,7 @@ export async function POST(req: NextRequest) {
       textoDoAluno: texto.trim(),
       feedbackIA,
       lacunasIA: jsonInput(lacunasIA),
+      nivelIA,
     },
   });
 

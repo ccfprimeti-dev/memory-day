@@ -40,9 +40,15 @@ Responda EXCLUSIVAMENTE com este JSON:
 {
   "resumo": "2-3 frases sobre o que o aluno demonstrou entender",
   "lacunas": ["conceito ausente 1", "conceito ausente 2"],
-  "sugestoes": ["sugestão de estudo 1", "sugestão de estudo 2"]
+  "sugestoes": ["sugestão de estudo 1", "sugestão de estudo 2"],
+  "nivel": "INTERMEDIARIO"
 }
 
+Regras para o campo "nivel":
+- "BASICO": aluno demonstrou compreensão superficial, muitas lacunas ou conceitos fundamentais ausentes.
+- "INTERMEDIARIO": aluno compreendeu os pontos principais mas tem lacunas relevantes a resolver.
+- "AVANCADO": aluno demonstrou domínio claro do conteúdo, com poucas ou nenhuma lacuna significativa.
+Use exatamente uma dessas três palavras, sem acentos, em maiúsculas.
 Seja construtivo. Responda em português do Brasil.`,
       },
     ],

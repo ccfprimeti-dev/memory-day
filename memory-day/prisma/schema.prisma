@@ -87,7 +87,8 @@ model Entry {
   data         String   // YYYY-MM-DD
   textoDoAluno String
   feedbackIA   String?
-  lacunasIA    Json?    // { resumo, lacunas, sugestoes }
+  lacunasIA    Json?    // { resumo, lacunas, sugestoes, nivel }
+  nivelIA      String?  // "BASICO" | "INTERMEDIARIO" | "AVANCADO" — extraído do lacunasIA para consultas agregadas
   criadoEm     DateTime @default(now())
 
   aluno   User    @relation("AlunoRegistros", fields: [alunoId],   references: [id])

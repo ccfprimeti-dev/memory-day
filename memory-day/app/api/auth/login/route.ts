@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       id:      usuario.id,
       nome:    usuario.nome,
       email:   usuario.email,
-      papel:   usuario.papel as "ALUNO" | "PROFESSOR",
+      papel:   usuario.papel as "ALUNO" | "PROFESSOR" | "ADMIN",
       turmaId: usuario.turmaId ?? null,
     };
     await sessao.save();

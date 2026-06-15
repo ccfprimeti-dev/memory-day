@@ -9,6 +9,20 @@
  *   EF2: 9º A, 8º B
  *   EM:  1º A EM, 2º B EM
  *
+ * Usuários demo (senha: senha123):
+ *   admin@escola.dev        → Admin (acesso total)
+ *   aluno1@escola.dev       → Beatriz [9º A]
+ *   aluno2@escola.dev       → Rafael  [9º A]
+ *   aluno3@escola.dev       → Juliana [8º B]
+ *   aluno4@escola.dev       → Lucas   [9º A]
+ *   aluno5@escola.dev       → Camila  [9º A]
+ *   aluno6@escola.dev       → Pedro   [8º B]
+ *   prof.mat@escola.dev     → Carlos  (Matemática, Álgebra, Geometria)
+ *   prof.gram@escola.dev    → Ana     (Gramática)
+ *   prof.his@escola.dev     → Marcos  (História, Geografia)
+ *   prof.cie@escola.dev     → Lúcia   (Ciências, Física)
+ *   prof.ing@escola.dev     → Tom     (Inglês, Writing)
+ *
  * Executar: npm run db:seed
  */
 
@@ -30,6 +44,13 @@ const MATERIAS_EM_EXTRAS = [
 
 const MATERIAS_EM = [...MATERIAS_EF2, ...MATERIAS_EM_EXTRAS];
 
+// ── Helper: formata data YYYY-MM-DD para N dias atrás ─────────────────────────
+function diasAtras(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().split("T")[0];
+}
+
 async function main() {
   console.log("🌱 Iniciando seed...");
 
@@ -43,12 +64,22 @@ async function main() {
 
   const senhaHash = await bcrypt.hash("senha123", 10);
 
+  // ── Admin ──────────────────────────────────────────────────────────────────
+  await prisma.user.create({
+    data: {
+      nome:      "Admin Geral",
+      email:     "admin@escola.dev",
+      senhaHash,
+      papel:     "ADMIN",
+    },
+  });
+
   // ── Turmas ─────────────────────────────────────────────────────────────────
   const [turma9A, turma8B, turma1AEM, turma2BEM] = await Promise.all([
-    prisma.turma.create({ data: { nome: "9º A",    anoLetivo: 2026, nivelEnsino: "EF2", codigoConvite: "9ANO-A-2026"   } }),
-    prisma.turma.create({ data: { nome: "8º B",    anoLetivo: 2026, nivelEnsino: "EF2", codigoConvite: "8ANO-B-2026"   } }),
-    prisma.turma.create({ data: { nome: "1º A EM", anoLetivo: 2026, nivelEnsino: "EM",  codigoConvite: "1ANO-A-EM-2026"} }),
-    prisma.turma.create({ data: { nome: "2º B EM", anoLetivo: 2026, nivelEnsino: "EM",  codigoConvite: "2ANO-B-EM-2026"} }),
+    prisma.turma.create({ data: { nome: "9º A",    anoLetivo: 2026, nivelEnsino: "EF2", codigoConvite: "9ANO-A-2026"    } }),
+    prisma.turma.create({ data: { nome: "8º B",    anoLetivo: 2026, nivelEnsino: "EF2", codigoConvite: "8ANO-B-2026"    } }),
+    prisma.turma.create({ data: { nome: "1º A EM", anoLetivo: 2026, nivelEnsino: "EM",  codigoConvite: "1ANO-A-EM-2026" } }),
+    prisma.turma.create({ data: { nome: "2º B EM", anoLetivo: 2026, nivelEnsino: "EM",  codigoConvite: "2ANO-B-EM-2026" } }),
   ]);
 
   // ── Professores demo ───────────────────────────────────────────────────────
@@ -63,28 +94,26 @@ async function main() {
   // ── Vínculos Professor <-> Turma ───────────────────────────────────────────
   await prisma.turmaProfessor.createMany({
     data: [
-      // EF2
-      { turmaId: turma9A.id,    professorId: pCarlos.id },
-      { turmaId: turma9A.id,    professorId: pAna.id    },
-      { turmaId: turma9A.id,    professorId: pMarcos.id },
-      { turmaId: turma9A.id,    professorId: pTom.id    },
-      { turmaId: turma8B.id,    professorId: pCarlos.id },
-      { turmaId: turma8B.id,    professorId: pAna.id    },
-      { turmaId: turma8B.id,    professorId: pLucia.id  },
-      { turmaId: turma8B.id,    professorId: pTom.id    },
-      // EM — mesmos professores
-      { turmaId: turma1AEM.id,  professorId: pCarlos.id },
-      { turmaId: turma1AEM.id,  professorId: pAna.id    },
-      { turmaId: turma1AEM.id,  professorId: pMarcos.id },
-      { turmaId: turma1AEM.id,  professorId: pTom.id    },
-      { turmaId: turma2BEM.id,  professorId: pCarlos.id },
-      { turmaId: turma2BEM.id,  professorId: pAna.id    },
-      { turmaId: turma2BEM.id,  professorId: pLucia.id  },
-      { turmaId: turma2BEM.id,  professorId: pTom.id    },
+      { turmaId: turma9A.id,   professorId: pCarlos.id },
+      { turmaId: turma9A.id,   professorId: pAna.id    },
+      { turmaId: turma9A.id,   professorId: pMarcos.id },
+      { turmaId: turma9A.id,   professorId: pTom.id    },
+      { turmaId: turma8B.id,   professorId: pCarlos.id },
+      { turmaId: turma8B.id,   professorId: pAna.id    },
+      { turmaId: turma8B.id,   professorId: pLucia.id  },
+      { turmaId: turma8B.id,   professorId: pTom.id    },
+      { turmaId: turma1AEM.id, professorId: pCarlos.id },
+      { turmaId: turma1AEM.id, professorId: pAna.id    },
+      { turmaId: turma1AEM.id, professorId: pMarcos.id },
+      { turmaId: turma1AEM.id, professorId: pTom.id    },
+      { turmaId: turma2BEM.id, professorId: pCarlos.id },
+      { turmaId: turma2BEM.id, professorId: pAna.id    },
+      { turmaId: turma2BEM.id, professorId: pLucia.id  },
+      { turmaId: turma2BEM.id, professorId: pTom.id    },
     ],
   });
 
-  // ── Helper: cria as matérias de uma turma e retorna mapa nome→id ──────────
+  // ── Helper: cria matérias de uma turma ────────────────────────────────────
   async function criarMaterias(
     turmaId: string,
     nomes: string[],
@@ -100,7 +129,6 @@ async function main() {
     return mapa;
   }
 
-  // Atribuições padrão para matérias EF2 (usadas em todas as turmas)
   function atribuicoesBase(marcos: string | null, lucia: string | null) {
     return {
       "Gramática":  pAna.id,
@@ -119,111 +147,149 @@ async function main() {
     };
   }
 
-  // ── EF2: 9º A ─────────────────────────────────────────────────────────────
-  const ids9A = await criarMaterias(turma9A.id, MATERIAS_EF2,
-    atribuicoesBase(pMarcos.id, null));   // Marcos em 9ºA; Lúcia não
-
-  // ── EF2: 8º B ─────────────────────────────────────────────────────────────
-  const ids8B = await criarMaterias(turma8B.id, MATERIAS_EF2,
-    atribuicoesBase(null, pLucia.id));    // Lúcia em 8ºB; Marcos não
-
-  // ── EM: 1º A EM ──────────────────────────────────────────────────────────
-  await criarMaterias(turma1AEM.id, MATERIAS_EM, {
-    ...atribuicoesBase(pMarcos.id, null),
-    "Branding":  null,
-    "Chemistry": null,
-    "Biologia":  null,
-    "Projeto":   null,
-    "Pitch":     null,
-  });
-
-  // ── EM: 2º B EM ──────────────────────────────────────────────────────────
-  await criarMaterias(turma2BEM.id, MATERIAS_EM, {
-    ...atribuicoesBase(null, pLucia.id),
-    "Branding":  null,
-    "Chemistry": null,
-    "Biologia":  null,
-    "Projeto":   null,
-    "Pitch":     null,
-  });
+  const ids9A    = await criarMaterias(turma9A.id,   MATERIAS_EF2, atribuicoesBase(pMarcos.id, null));
+  const ids8B    = await criarMaterias(turma8B.id,   MATERIAS_EF2, atribuicoesBase(null, pLucia.id));
+  await criarMaterias(turma1AEM.id, MATERIAS_EM, { ...atribuicoesBase(pMarcos.id, null), "Branding": null, "Chemistry": null, "Biologia": null, "Projeto": null, "Pitch": null });
+  await criarMaterias(turma2BEM.id, MATERIAS_EM, { ...atribuicoesBase(null, pLucia.id), "Branding": null, "Chemistry": null, "Biologia": null, "Projeto": null, "Pitch": null });
 
   // ── Alunos demo ────────────────────────────────────────────────────────────
-  const [aBeatriz, aRafael, aJuliana] = await Promise.all([
-    prisma.user.create({ data: { nome: "Beatriz Silva", email: "aluno1@escola.dev", senhaHash, papel: "ALUNO", turmaId: turma9A.id } }),
-    prisma.user.create({ data: { nome: "Rafael Costa",  email: "aluno2@escola.dev", senhaHash, papel: "ALUNO", turmaId: turma9A.id } }),
-    prisma.user.create({ data: { nome: "Juliana Ramos", email: "aluno3@escola.dev", senhaHash, papel: "ALUNO", turmaId: turma8B.id } }),
+  const [aBeatriz, aRafael, aJuliana, aLucas, aCamila, aPedro] = await Promise.all([
+    prisma.user.create({ data: { nome: "Beatriz Silva",  email: "aluno1@escola.dev", senhaHash, papel: "ALUNO", turmaId: turma9A.id } }),
+    prisma.user.create({ data: { nome: "Rafael Costa",   email: "aluno2@escola.dev", senhaHash, papel: "ALUNO", turmaId: turma9A.id } }),
+    prisma.user.create({ data: { nome: "Juliana Ramos",  email: "aluno3@escola.dev", senhaHash, papel: "ALUNO", turmaId: turma8B.id } }),
+    prisma.user.create({ data: { nome: "Lucas Mendes",   email: "aluno4@escola.dev", senhaHash, papel: "ALUNO", turmaId: turma9A.id } }),
+    prisma.user.create({ data: { nome: "Camila Torres",  email: "aluno5@escola.dev", senhaHash, papel: "ALUNO", turmaId: turma9A.id } }),
+    prisma.user.create({ data: { nome: "Pedro Alves",    email: "aluno6@escola.dev", senhaHash, papel: "ALUNO", turmaId: turma8B.id } }),
   ]);
 
-  // ── Registros de ontem ─────────────────────────────────────────────────────
-  const ontem = new Date();
-  ontem.setDate(ontem.getDate() - 1);
-  const dataOntem = ontem.toISOString().split("T")[0];
+  // ── Conteúdo de registros demo por matéria ────────────────────────────────
+  const textos: Record<string, string> = {
+    "Matemática": "Estudamos equações do segundo grau e a fórmula de Bhaskara. Entendi o papel do discriminante.",
+    "Gramática":  "Vimos verbos transitivos e intransitivos. Ainda confundo complemento nominal com objeto indireto.",
+    "História":   "Estudamos a Revolução Industrial e a migração campo-cidade. O impacto ambiental ficou pouco claro.",
+    "Inglês":     "Aprendi o Present Perfect e quando usá-lo em vez do Simple Past. A diferença de contexto ficou difusa.",
+    "Álgebra":    "Revisamos expressões algébricas e fatoração. Tive dificuldade nos casos de fatoração por agrupamento.",
+    "Física":     "Estudamos as leis de Newton. A terceira lei ficou clara, mas errei na aplicação do exercício.",
+    "Ciências":   "Vimos o sistema digestório e as funções das enzimas. A absorção intestinal ficou confusa.",
+    "Geografia":  "Estudamos os tipos de solo e formações geológicas. A parte de tectônica ainda gera dúvidas.",
+    "Geometria":  "Revisamos áreas de figuras planas. O cálculo de área de trapézio ficou confuso.",
+    "Writing":    "Trabalhamos estrutura de parágrafo em inglês. Tive dificuldade com os conectivos de contraste.",
+  };
 
-  const amostras9A = [
-    { mat: "Matemática", texto: "Estudamos equações do segundo grau e a fórmula de Bhaskara. Entendi o papel do discriminante para determinar o número de raízes reais." },
-    { mat: "Gramática",  texto: "Vimos verbos transitivos e intransitivos. Ainda confundo complemento nominal com objeto indireto." },
-    { mat: "História",   texto: "Estudamos a Revolução Industrial e a migração do campo para as cidades. O impacto ambiental ficou pouco claro." },
-    { mat: "Inglês",     texto: "Aprendi o Present Perfect e quando usá-lo em vez do Simple Past. A diferença de contexto ainda parece difusa." },
-    { mat: "Álgebra",    texto: "Revisamos expressões algébricas e fatoração. Tive dificuldade nos casos de fatoração por agrupamento." },
-  ];
+  // ── Distribui registros nos últimos 60 dias com nivelIA variados ──────────
+  // Perfis de evolução para tornar os gráficos interessantes
+  type Perfil = { nivel: string; diasOffset: number[] }[];
+  const perfis9A: Record<string, Perfil> = {
+    [aBeatriz.id]: [
+      // Beatriz — evolução clara: começa básico, termina avançado
+      { nivel: "BASICO",        diasOffset: [58, 55, 52, 49] },
+      { nivel: "INTERMEDIARIO", diasOffset: [40, 37, 34, 28] },
+      { nivel: "AVANCADO",      diasOffset: [20, 14, 7,  1]  },
+    ],
+    [aRafael.id]: [
+      // Rafael — intermediário consistente
+      { nivel: "BASICO",        diasOffset: [55, 48] },
+      { nivel: "INTERMEDIARIO", diasOffset: [42, 35, 28, 21, 14, 7, 2] },
+    ],
+    [aLucas.id]: [
+      // Lucas — básico com algumas melhoras
+      { nivel: "BASICO",        diasOffset: [56, 49, 42, 35, 28] },
+      { nivel: "INTERMEDIARIO", diasOffset: [18, 10, 3] },
+    ],
+    [aCamila.id]: [
+      // Camila — avançada desde o início
+      { nivel: "INTERMEDIARIO", diasOffset: [58, 52] },
+      { nivel: "AVANCADO",      diasOffset: [45, 38, 30, 22, 15, 8, 1] },
+    ],
+  };
 
-  for (const aluno of [aBeatriz, aRafael]) {
-    for (const { mat, texto } of amostras9A) {
-      await prisma.entry.create({
-        data: { alunoId: aluno.id, subjectId: ids9A[mat], data: dataOntem, textoDoAluno: texto },
-      });
+  const materias9A = ["Matemática", "Gramática", "História", "Inglês", "Álgebra"];
+  const materias8B = ["Matemática", "Gramática", "Ciências", "Inglês", "Física"];
+
+  // Gera entries para alunos do 9º A
+  for (const [alunoId, perfil] of Object.entries(perfis9A)) {
+    for (const mat of materias9A) {
+      const subjectId = ids9A[mat];
+      if (!subjectId) continue;
+      for (const faixa of perfil) {
+        for (const dias of faixa.diasOffset) {
+          const data = diasAtras(dias);
+          const feedback = { resumo: textos[mat] ?? "Aula registrada.", lacunas: ["Ponto de atenção"], sugestoes: ["Revisar o tema"], nivel: faixa.nivel };
+          await prisma.entry.upsert({
+            where: { alunoId_subjectId_data: { alunoId, subjectId, data } },
+            update: { textoDoAluno: textos[mat] ?? "Registro.", feedbackIA: feedback.resumo, lacunasIA: feedback, nivelIA: faixa.nivel },
+            create: { alunoId, subjectId, data, textoDoAluno: textos[mat] ?? "Registro.", feedbackIA: feedback.resumo, lacunasIA: feedback, nivelIA: faixa.nivel },
+          });
+        }
+      }
     }
   }
 
-  const amostras8B = [
-    { mat: "Matemática", texto: "Revisamos frações e operações com números racionais. Tive dificuldade nos casos de divisão de frações mistas." },
-    { mat: "Gramática",  texto: "Estudamos concordância verbal e nominal. Os casos de sujeito composto ainda geram dúvidas." },
-    { mat: "Ciências",   texto: "Vimos o sistema digestório e as funções das enzimas. A parte de absorção intestinal ficou confusa." },
-    { mat: "Inglês",     texto: "Trabalhamos o uso do Simple Past com verbos irregulares. Ainda erro a pronúncia de alguns." },
-    { mat: "Física",     texto: "Estudamos as leis de Newton. A terceira lei (ação e reação) ficou clara, mas apliquei errado no exercício." },
-  ];
+  // Gera entries para alunos do 8º B
+  const perfis8B: Record<string, Array<{ nivel: string; diasOffset: number[] }>> = {
+    [aJuliana.id]: [
+      { nivel: "INTERMEDIARIO", diasOffset: [57, 50, 40, 30, 20] },
+      { nivel: "AVANCADO",      diasOffset: [12, 5, 1] },
+    ],
+    [aPedro.id]: [
+      { nivel: "BASICO",        diasOffset: [58, 51, 44, 37, 30, 23, 16, 9, 2] },
+    ],
+  };
 
-  for (const { mat, texto } of amostras8B) {
-    await prisma.entry.create({
-      data: { alunoId: aJuliana.id, subjectId: ids8B[mat], data: dataOntem, textoDoAluno: texto },
-    });
+  for (const [alunoId, perfil] of Object.entries(perfis8B)) {
+    for (const mat of materias8B) {
+      const subjectId = ids8B[mat];
+      if (!subjectId) continue;
+      for (const faixa of perfil) {
+        for (const dias of faixa.diasOffset) {
+          const data = diasAtras(dias);
+          const feedback = { resumo: textos[mat] ?? "Aula registrada.", lacunas: ["Ponto de atenção"], sugestoes: ["Revisar o tema"], nivel: faixa.nivel };
+          await prisma.entry.upsert({
+            where: { alunoId_subjectId_data: { alunoId, subjectId, data } },
+            update: { textoDoAluno: textos[mat] ?? "Registro.", feedbackIA: feedback.resumo, lacunasIA: feedback, nivelIA: faixa.nivel },
+            create: { alunoId, subjectId, data, textoDoAluno: textos[mat] ?? "Registro.", feedbackIA: feedback.resumo, lacunasIA: feedback, nivelIA: faixa.nivel },
+          });
+        }
+      }
+    }
   }
 
   // ── Relatório de exemplo ───────────────────────────────────────────────────
   await prisma.classReport.create({
     data: {
-      turmaId:    turma9A.id,
-      subjectId:  ids9A["Matemática"],
-      data:       dataOntem,
+      turmaId:   turma9A.id,
+      subjectId: ids9A["Matemática"],
+      data:      diasAtras(1),
       conteudoIA: {
         nivelGeral:           "Intermediário",
         percentualRegistros:  100,
         lacunasComuns:        ["Casos com discriminante = 0", "Falta de exemplos práticos"],
         recomendacoes:        ["Praticar exercícios com raiz dupla", "Revisar problemas contextualizados"],
-        resumoGeral: "A turma 9ºA demonstrou compreensão razoável de Bhaskara. A maioria identificou o discriminante, mas poucos exploraram o caso de raiz dupla.",
+        resumoGeral: "A turma 9ºA demonstrou compreensão razoável de Bhaskara. A maioria identificou o discriminante.",
       },
     },
   });
 
   // ── Resumo ─────────────────────────────────────────────────────────────────
   console.log("\n✅ Seed concluído!\n");
-  console.log("── Turmas EF2 (5 aulas/dia · 13 matérias) ─────────────────────────");
+  console.log("── Admin ───────────────────────────────────────────────────────────");
+  console.log("  admin@escola.dev  →  Admin Geral  (senha: senha123)");
+  console.log("\n── Turmas EF2 (5 aulas/dia · 13 matérias) ─────────────────────────");
   console.log("  9º A  (código: 9ANO-A-2026)  |  8º B  (código: 8ANO-B-2026)");
   console.log("\n── Turmas EM (7 aulas/dia · 18 matérias) ──────────────────────────");
-  console.log("  1º A EM  (código: 1ANO-A-EM-2026)  |  2º B EM  (código: 2ANO-B-EM-2026)");
-  console.log("\n── Matérias EF2 ────────────────────────────────────────────────────");
-  console.log(" ", MATERIAS_EF2.join(" · "));
-  console.log("\n── Matérias extras EM ──────────────────────────────────────────────");
-  console.log(" ", MATERIAS_EM_EXTRAS.join(" · "));
+  console.log("  1º A EM  |  2º B EM");
   console.log("\n── Alunos demo (senha: senha123) ───────────────────────────────────");
-  console.log("  aluno1@escola.dev  →  Beatriz [9º A · EF2]");
-  console.log("  aluno2@escola.dev  →  Rafael  [9º A · EF2]");
-  console.log("  aluno3@escola.dev  →  Juliana [8º B · EF2]");
+  console.log("  aluno1@escola.dev  →  Beatriz [9º A · evolução BASICO→AVANCADO]");
+  console.log("  aluno2@escola.dev  →  Rafael  [9º A · INTERMEDIARIO constante]");
+  console.log("  aluno3@escola.dev  →  Juliana [8º B · evolução INTERMEDIARIO→AVANCADO]");
+  console.log("  aluno4@escola.dev  →  Lucas   [9º A · BASICO→INTERMEDIARIO]");
+  console.log("  aluno5@escola.dev  →  Camila  [9º A · AVANCADO desde o início]");
+  console.log("  aluno6@escola.dev  →  Pedro   [8º B · BASICO consistente]");
   console.log("\n── Professores demo (senha: senha123) ──────────────────────────────");
   console.log("  prof.mat@escola.dev   →  Carlos  (Matemática, Álgebra, Geometria)");
   console.log("  prof.gram@escola.dev  →  Ana     (Gramática)");
-  console.log("  prof.his@escola.dev   →  Marcos  (História, Geografia — EF2 9ºA e EM 1ºA)");
-  console.log("  prof.cie@escola.dev   →  Lúcia   (Ciências, Física — EF2 8ºB e EM 2ºB)");
+  console.log("  prof.his@escola.dev   →  Marcos  (História, Geografia)");
+  console.log("  prof.cie@escola.dev   →  Lúcia   (Ciências, Física)");
   console.log("  prof.ing@escola.dev   →  Tom     (Inglês, Writing)");
 }
 
