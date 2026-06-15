@@ -15,12 +15,12 @@ import type { RelatorioIA } from "@/types";
 let fonteOk = false;
 function registrarFonte() {
   if (fonteOk) return;
-  const dir = path.join(process.cwd(), "node_modules/@fontsource/roboto/files");
+  const dir = path.join(process.cwd(), "public", "fonts");
   Font.register({
     family: "Roboto",
     fonts: [
-      { src: path.join(dir, "roboto-latin-ext-400-normal.woff"), fontWeight: 400 },
-      { src: path.join(dir, "roboto-latin-ext-700-normal.woff"), fontWeight: 700 },
+      { src: path.join(dir, "roboto-400.woff"), fontWeight: 400 },
+      { src: path.join(dir, "roboto-700.woff"), fontWeight: 700 },
     ],
   });
   fonteOk = true;
