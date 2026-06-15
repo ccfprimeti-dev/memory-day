@@ -19,7 +19,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ erro: "turmaId e data são obrigatórios." }, { status: 400 });
     }
 
-    // Busca todos os alunos da turma com seus registros do dia
+    // Professor logado — usado para isolar dados por matéria
+    const professorId = sessao.usuario.id;
+
+    // Busca todos os alunos da turma, mas apenas os registros das matérias
+    // que este professor leciona (isolamento por subjectId → professorId)
     const alunos = await prisma.user.findMany({
       where:   { papel: "ALUNO", turmaId },
       orderBy: { nome: "asc" },
@@ -27,20 +31,25 @@ export async function GET(req: NextRequest) {
         id:   true,
         nome: true,
         registros: {
-          where:   { data },
+          where: {
+            data,
+            materia: { professorId }, // isolamento: só matérias deste professor
+          },
           select: {
-            id:          true,
-            textoDoAluno:true,
-            feedbackIA:  true,
-            lacunasIA:   true,
+            id:           true,
+            textoDoAluno: true,
+            feedbackIA:   true,
+            lacunasIA:    true,
             materia: { select: { id: true, nome: true } },
           },
         },
       },
     });
 
-    // Total de matérias da turma (para calcular % de completude)
-    const totalMaterias = await prisma.subject.count({ where: { turmaId } });
+    // Total de matérias que ESTE professor leciona nesta turma
+    const totalMaterias = await prisma.subject.count({
+      where: { turmaId, professorId },
+    });
 
     return NextResponse.json({ alunos, totalMaterias });
   } catch (erro) {
