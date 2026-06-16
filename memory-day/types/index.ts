@@ -65,9 +65,10 @@ export interface RelatorioIA {
 
 // ─── Payload POST /api/registro ──────────────────────────────────────────────
 export interface RegistroPayload {
-  subjectId: string;
-  texto:     string;
-  data:      string; // YYYY-MM-DD
+  subjectId:       string;
+  texto:           string;
+  data:            string; // YYYY-MM-DD
+  quantidadeAulas?: number; // quantas aulas esse registro cobre (ex: aula dupla = 2). Padrão: 1
 }
 
 // ─── Payload POST /api/relatorio ─────────────────────────────────────────────

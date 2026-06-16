@@ -37,7 +37,7 @@ export default async function RelatorioPage({ params }: Props) {
       nome: true,
       registros: {
         where: { subjectId: relatorio.subjectId, data: relatorio.data },
-        select: { textoDoAluno: true, feedbackIA: true, lacunasIA: true },
+        select: { textoDoAluno: true, feedbackIA: true, lacunasIA: true, quantidadeAulas: true },
       },
     },
   });
@@ -52,6 +52,7 @@ export default async function RelatorioPage({ params }: Props) {
         textoDoAluno: reg.textoDoAluno,
         feedbackIA:   reg.feedbackIA,
         lacunasIA:    reg.lacunasIA as unknown as FeedbackIA | null,
+        quantidadeAulas: reg.quantidadeAulas,
       } : null,
     };
   });

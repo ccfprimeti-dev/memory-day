@@ -9,9 +9,10 @@ interface AulaCardProps {
   data:         string;
   textoInicial?: string;
   feedbackInicial?: FeedbackIA | null;
+  quantidadeAulas?: number;
 }
 
-export function AulaCard({ subjectId, nomeMateria, data, textoInicial = "", feedbackInicial = null }: AulaCardProps) {
+export function AulaCard({ subjectId, nomeMateria, data, textoInicial = "", feedbackInicial = null, quantidadeAulas = 1 }: AulaCardProps) {
   const [texto, setTexto] = useState(textoInicial);
   const [feedback, setFeedback] = useState<FeedbackIA | null>(feedbackInicial);
   const [carregando, setCarregando] = useState(false);
@@ -43,7 +44,14 @@ export function AulaCard({ subjectId, nomeMateria, data, textoInicial = "", feed
     <div className="glass-card rounded-xl overflow-hidden">
       {/* Cabeçalho */}
       <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-amber-50 to-yellow-50/60">
-        <h3 className="font-semibold text-slate-800">{nomeMateria}</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-slate-800">{nomeMateria}</h3>
+          {quantidadeAulas > 1 && (
+            <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">
+              {quantidadeAulas} aulas
+            </span>
+          )}
+        </div>
         {enviado && (
           <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-full">
             ✓ Enviado

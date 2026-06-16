@@ -50,6 +50,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ erro: "Matéria não encontrada" }, { status: 404 });
   }
 
+  // Quantidade de aulas que este registro cobre (ex: aula dupla = 2). Padrão: 1.
+  const quantidadeAulasInformada =
+    Number.isInteger(body.quantidadeAulas) && (body.quantidadeAulas as number) > 0
+      ? (body.quantidadeAulas as number)
+      : undefined;
+  let quantidadeAulas = quantidadeAulasInformada ?? 1;
+
+  // Conta apenas entradas existentes (upsert em entrada já criada é sempre permitido)
+  const jaExiste = await prisma.entry.findUnique({
+    where: { alunoId_subjectId_data: { alunoId: sessao.usuario.id, subjectId, data } },
+  });
+
   // Verifica se o aluno ainda pode registrar mais aulas hoje (limite por nível)
   const aluno = await prisma.user.findUnique({
     where:  { id: sessao.usuario.id },
@@ -61,18 +73,22 @@ export async function POST(req: NextRequest) {
       select: { nivelEnsino: true },
     });
     const maxAulas = turmaAluno?.nivelEnsino === "EM" ? 7 : 5;
+    quantidadeAulas = Math.min(quantidadeAulas, maxAulas);
 
-    // Conta apenas entradas existentes (upsert em entrada já criada é sempre permitido)
-    const jaExiste = await prisma.entry.findUnique({
-      where: { alunoId_subjectId_data: { alunoId: sessao.usuario.id, subjectId, data } },
-    });
     if (!jaExiste) {
-      const totalHoje = await prisma.entry.count({
+      const entriesHoje = await prisma.entry.findMany({
         where: { alunoId: sessao.usuario.id, data },
+        select: { quantidadeAulas: true },
       });
-      if (totalHoje >= maxAulas) {
+      const totalAulasHoje = entriesHoje.reduce((soma, e) => soma + e.quantidadeAulas, 0);
+      if (totalAulasHoje + quantidadeAulas > maxAulas) {
+        const restantes = Math.max(0, maxAulas - totalAulasHoje);
         return NextResponse.json(
-          { erro: `Você já atingiu o limite de ${maxAulas} aulas por dia para o seu nível de ensino.` },
+          {
+            erro: restantes === 0
+              ? `Você já atingiu o limite de ${maxAulas} aulas por dia para o seu nível de ensino.`
+              : `Esse registro cobre ${quantidadeAulas} aula(s), mas só restam ${restantes} aula(s) hoje.`,
+          },
           { status: 400 }
         );
       }
@@ -111,6 +127,7 @@ export async function POST(req: NextRequest) {
       feedbackIA,
       lacunasIA: jsonInput(lacunasIA),
       nivelIA,
+      ...(quantidadeAulasInformada !== undefined ? { quantidadeAulas } : {}),
     },
     create: {
       alunoId: sessao.usuario.id,
@@ -120,6 +137,7 @@ export async function POST(req: NextRequest) {
       feedbackIA,
       lacunasIA: jsonInput(lacunasIA),
       nivelIA,
+      quantidadeAulas,
     },
   });
 

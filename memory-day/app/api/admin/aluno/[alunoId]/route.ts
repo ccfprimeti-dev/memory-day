@@ -39,6 +39,7 @@ export async function GET(req: NextRequest, { params }: Params) {
           feedbackIA:   true,
           lacunasIA:    true,
           nivelIA:      true,
+          quantidadeAulas: true,
           materia: { select: { id: true, nome: true } },
         },
         orderBy: { materia: { nome: "asc" } },

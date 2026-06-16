@@ -9,6 +9,7 @@ interface Registro {
   feedbackIA:   string | null;
   lacunasIA:    FeedbackIA | null;
   nivelIA:      string | null;
+  quantidadeAulas: number;
   materia:      { id: string; nome: string };
 }
 
@@ -164,7 +165,14 @@ export function AlunoAdminView({ alunoId, nomeAluno, nomeTurma, dataInicial }: P
               <div key={reg.id} className="glass-card rounded-xl overflow-hidden">
                 {/* Cabeçalho da matéria */}
                 <div className="px-5 py-3 border-b border-slate-100 bg-gradient-to-r from-amber-50 to-yellow-50/60 flex items-center justify-between">
-                  <span className="font-semibold text-slate-800 text-sm">{reg.materia.nome}</span>
+                  <span className="font-semibold text-slate-800 text-sm flex items-center gap-2">
+                    {reg.materia.nome}
+                    {reg.quantidadeAulas > 1 && (
+                      <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">
+                        {reg.quantidadeAulas} aulas
+                      </span>
+                    )}
+                  </span>
                   {nivel && (
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${corNivel(reg.nivelIA)}`}>
                       {nivel}

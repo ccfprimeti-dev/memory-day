@@ -6,39 +6,61 @@ import { FeedbackPanel } from "./FeedbackPanel";
 import type { FeedbackIA } from "@/types";
 
 interface Materia { id: string; nome: string; }
-interface Props { materias: Materia[]; data: string; numero: number; }
-interface DropPos { top: number; left: number; width: number; }
+interface Props { materias: Materia[]; data: string; numero: number; maxQuantidade?: number; }
+interface DropPos { left: number; width: number; maxHeight: number; top?: number; bottom?: number; }
 
-export function SelectSlot({ materias, data, numero }: Props) {
+const MARGEM_VIEWPORT = 12;
+const ALTURA_MIN_ABAIXO = 160;
+const ALTURA_IDEAL = 280;
+
+export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
-  const [dropPos, setDropPos] = useState<DropPos>({ top: 0, left: 0, width: 0 });
+  const [dropPos, setDropPos] = useState<DropPos>({ top: 0, left: 0, width: 0, maxHeight: ALTURA_IDEAL });
   const [subjectId, setSubjectId] = useState("");
+  const [quantidadeAulas, setQuantidadeAulas] = useState(1);
   const [texto, setTexto] = useState("");
   const [feedback, setFeedback] = useState<FeedbackIA | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [enviado, setEnviado] = useState(false);
   const botaoRef = useRef<HTMLButtonElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
 
   const materiaSelecionada = materias.find((m) => m.id === subjectId);
 
   function handleToggle() {
     if (!aberto && botaoRef.current) {
       const r = botaoRef.current.getBoundingClientRect();
-      setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
+      const espacoAbaixo = window.innerHeight - r.bottom - MARGEM_VIEWPORT;
+      const espacoAcima  = r.top - MARGEM_VIEWPORT;
+      // Abre para cima só se não houver espaço suficiente abaixo e houver mais espaço acima
+      const abrirParaCima = espacoAbaixo < ALTURA_MIN_ABAIXO && espacoAcima > espacoAbaixo;
+      const espacoDisponivel = abrirParaCima ? espacoAcima : espacoAbaixo;
+      const maxHeight = Math.max(120, Math.min(ALTURA_IDEAL, espacoDisponivel));
+
+      setDropPos(
+        abrirParaCima
+          ? { bottom: window.innerHeight - r.top + 4, left: r.left, width: r.width, maxHeight }
+          : { top: r.bottom + 4, left: r.left, width: r.width, maxHeight }
+      );
     }
     setAberto((v) => !v);
   }
 
   useEffect(() => {
     if (!aberto) return;
-    const fechar = () => setAberto(false);
-    document.addEventListener("mousedown", fechar);
-    window.addEventListener("scroll", fechar, true);
+    const fecharClique = () => setAberto(false);
+    // Ignora rolagem que acontece DENTRO do próprio dropdown (lista longa de matérias)
+    const fecharScroll = (e: Event) => {
+      if (dropRef.current && e.target instanceof Node && dropRef.current.contains(e.target)) return;
+      setAberto(false);
+    };
+    document.addEventListener("mousedown", fecharClique);
+    window.addEventListener("scroll", fecharScroll, true);
     return () => {
-      document.removeEventListener("mousedown", fechar);
-      window.removeEventListener("scroll", fechar, true);
+      document.removeEventListener("mousedown", fecharClique);
+      window.removeEventListener("scroll", fecharScroll, true);
     };
   }, [aberto]);
 
@@ -53,7 +75,7 @@ export function SelectSlot({ materias, data, numero }: Props) {
       const res = await fetch("/api/registro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId, texto, data }),
+        body: JSON.stringify({ subjectId, texto, data, quantidadeAulas }),
       });
       const dados = await res.json();
       if (!res.ok) { setErro(dados.erro ?? "Erro ao enviar."); return; }
@@ -71,9 +93,18 @@ export function SelectSlot({ materias, data, numero }: Props) {
   const listaOpcoes = aberto && typeof document !== "undefined"
     ? createPortal(
         <div
+          ref={dropRef}
           onMouseDown={handleDropdownMouseDown}
-          style={{ position: "fixed", top: dropPos.top, left: dropPos.left, width: dropPos.width, zIndex: 9999 }}
-          className="rounded-xl overflow-hidden bg-white border border-slate-200 shadow-lg shadow-slate-200/60"
+          style={{
+            position: "fixed",
+            left: dropPos.left,
+            width: dropPos.width,
+            maxHeight: dropPos.maxHeight,
+            overflowY: "auto",
+            zIndex: 9999,
+            ...(dropPos.top !== undefined ? { top: dropPos.top } : { bottom: dropPos.bottom }),
+          }}
+          className="rounded-xl bg-white border border-slate-200 shadow-lg shadow-slate-200/60"
         >
           {materias.length === 0 ? (
             <div className="px-4 py-3 text-sm text-slate-400 text-center">
@@ -84,7 +115,7 @@ export function SelectSlot({ materias, data, numero }: Props) {
               <button
                 key={m.id}
                 type="button"
-                onClick={() => { setSubjectId(m.id); setAberto(false); setErro(null); }}
+                onClick={() => { setSubjectId(m.id); setAberto(false); setErro(null); setQuantidadeAulas(1); }}
                 className={`w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-3
                   ${subjectId === m.id
                     ? "bg-amber-50 text-amber-800"
@@ -156,6 +187,35 @@ export function SelectSlot({ materias, data, numero }: Props) {
               </svg>
             </button>
             {listaOpcoes}
+          </div>
+        )}
+
+        {/* Total de aulas — só aparece quando há mais de 1 aula disponível (ex: aula dupla) */}
+        {subjectId && !enviado && maxQuantidade > 1 && (
+          <div>
+            <label className="block text-[10px] font-orbitron tracking-[0.3em] text-slate-500 uppercase mb-2">
+              Total de aulas
+            </label>
+            <div className="flex gap-2">
+              {Array.from({ length: maxQuantidade }, (_, i) => i + 1).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setQuantidadeAulas(n)}
+                  className={`px-3.5 py-1.5 rounded-lg text-sm font-semibold border transition
+                    ${quantidadeAulas === n
+                      ? "bg-amber-50 border-amber-400 text-amber-700"
+                      : "bg-slate-50 border-slate-200 text-slate-500 hover:border-amber-300"}`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            {quantidadeAulas > 1 && (
+              <p className="text-[11px] text-slate-400 mt-1.5">
+                Esse registro vai contar como {quantidadeAulas} aulas hoje (ex: aula dupla).
+              </p>
+            )}
           </div>
         )}
 

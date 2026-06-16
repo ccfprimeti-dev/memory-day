@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
             textoDoAluno: true,
             feedbackIA:   true,
             lacunasIA:    true,
+            quantidadeAulas: true,
             materia: { select: { id: true, nome: true } },
           },
         },

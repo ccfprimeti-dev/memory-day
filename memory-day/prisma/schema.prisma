@@ -89,6 +89,7 @@ model Entry {
   feedbackIA   String?
   lacunasIA    Json?    // { resumo, lacunas, sugestoes, nivel }
   nivelIA      String?  // "BASICO" | "INTERMEDIARIO" | "AVANCADO" — extraído do lacunasIA para consultas agregadas
+  quantidadeAulas Int   @default(1) // quantas aulas (períodos) esse registro cobre no dia — ex: aula dupla = 2
   criadoEm     DateTime @default(now())
 
   aluno   User    @relation("AlunoRegistros", fields: [alunoId],   references: [id])

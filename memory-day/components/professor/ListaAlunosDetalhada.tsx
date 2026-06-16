@@ -7,6 +7,7 @@ interface Registro {
   textoDoAluno: string;
   feedbackIA:   string | null;
   lacunasIA:    FeedbackIA | null;
+  quantidadeAulas: number;
   materia:      { id: string; nome: string };
 }
 
@@ -191,6 +192,11 @@ export function ListaAlunosDetalhada({ turmaId, data }: Props) {
                         <p className="text-xs font-orbitron tracking-widest text-amber-700/70 uppercase">
                           {reg.materia.nome}
                         </p>
+                        {reg.quantidadeAulas > 1 && (
+                          <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">
+                            {reg.quantidadeAulas} aulas
+                          </span>
+                        )}
                         {feedback && (
                           <span className="ml-auto text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
                             ✦ IA analisou

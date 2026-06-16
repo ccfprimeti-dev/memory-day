@@ -9,6 +9,7 @@ export interface AlunoComRegistro {
     textoDoAluno: string;
     feedbackIA:   string | null;
     lacunasIA:    FeedbackIA | null;
+    quantidadeAulas: number;
   } | null;
 }
 
@@ -82,6 +83,11 @@ export function ListaAlunos({ alunos, nomeMateria, data }: Props) {
                 <div className="flex items-center gap-3">
                   {enviou ? (
                     <>
+                      {aluno.registro && aluno.registro.quantidadeAulas > 1 && (
+                        <span className="text-xs font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">
+                          {aluno.registro.quantidadeAulas} aulas
+                        </span>
+                      )}
                       {feedback ? (
                         <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
                           ✦ IA analisou

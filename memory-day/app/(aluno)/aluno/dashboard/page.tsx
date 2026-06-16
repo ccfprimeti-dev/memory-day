@@ -36,7 +36,8 @@ export default async function AlunoDashboard() {
     orderBy: { criadoEm: "asc" },
   });
 
-  const preenchidos = registrosHoje.length;
+  // Preenchidos em "aulas": um registro de aula dupla conta como 2, não como 1
+  const preenchidos = registrosHoje.reduce((soma, r) => soma + r.quantidadeAulas, 0);
   // Slots vazios: quantas aulas ainda podem ser registradas hoje (até o limite do nível)
   const slotsVazios = Math.max(0, maxAulas - preenchidos);
   const pct = maxAulas > 0 ? Math.round((preenchidos / maxAulas) * 100) : 0;
@@ -103,18 +104,26 @@ export default async function AlunoDashboard() {
             data={hoje}
             textoInicial={registro.textoDoAluno}
             feedbackInicial={registro.lacunasIA as unknown as FeedbackIA | null}
+            quantidadeAulas={registro.quantidadeAulas}
           />
         ))}
 
-        {/* Slots vazios — até o limite de aulas do nível */}
-        {Array.from({ length: slotsVazios }).map((_, i) => (
-          <SelectSlot
-            key={`slot-${i}`}
-            materias={todasMaterias}
-            data={hoje}
-            numero={preenchidos + i + 1}
-          />
-        ))}
+        {/* Slots vazios — até o limite de aulas do nível.
+            A key usa "numero" (que depende de "preenchidos") em vez do índice puro,
+            para que o React nunca reaproveite a instância de um slot já enviado
+            (índice 0 antes de um envio não é a mesma "vaga" que o índice 0 depois). */}
+        {Array.from({ length: slotsVazios }).map((_, i) => {
+          const numero = preenchidos + i + 1;
+          return (
+            <SelectSlot
+              key={`slot-${numero}`}
+              materias={todasMaterias}
+              data={hoje}
+              numero={numero}
+              maxQuantidade={slotsVazios}
+            />
+          );
+        })}
       </div>
     </div>
   );
