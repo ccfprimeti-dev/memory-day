@@ -3,16 +3,24 @@ import { prisma } from "@/lib/prisma";
 import { getSessao } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { LABEL_NIVEL_ENSINO, type NivelEnsino } from "@/types";
 
 export default async function AdminPage() {
   const sessao = await getSessao();
   if (!sessao.usuario || sessao.usuario.papel !== "ADMIN") redirect("/login");
 
   const turmas = await prisma.turma.findMany({
-    orderBy: [{ anoLetivo: "desc" }, { nome: "asc" }],
     include: {
       _count: { select: { alunos: true, materias: true } },
     },
+  });
+
+  // Ordem crescente: 1º-5º (EF1) → 6º-9º (EF2) → 1º-2º EM, do menor ano para o maior
+  const ORDEM_NIVEL: Record<string, number> = { EF1: 0, EF2: 1, EM: 2 };
+  turmas.sort((a, b) => {
+    const diffNivel = (ORDEM_NIVEL[a.nivelEnsino] ?? 99) - (ORDEM_NIVEL[b.nivelEnsino] ?? 99);
+    if (diffNivel !== 0) return diffNivel;
+    return (parseInt(a.nome, 10) || 0) - (parseInt(b.nome, 10) || 0);
   });
 
   return (
@@ -50,7 +58,7 @@ export default async function AdminPage() {
                 ${t.nivelEnsino === "EM"
                   ? "text-slate-700 border-slate-300 bg-slate-100"
                   : "text-amber-700 border-amber-200 bg-amber-50"}`}>
-                {t.nivelEnsino === "EM" ? "Ensino Médio" : "Fund. 2"}
+                {LABEL_NIVEL_ENSINO[t.nivelEnsino as NivelEnsino] ?? t.nivelEnsino}
               </span>
             </div>
             <div className="flex gap-4 text-sm text-slate-500">

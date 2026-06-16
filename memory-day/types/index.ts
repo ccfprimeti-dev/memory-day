@@ -12,7 +12,7 @@ export interface SessaoUsuario {
 }
 
 // ─── Turma ────────────────────────────────────────────────────────────────────
-export type NivelEnsino = "EF2" | "EM";
+export type NivelEnsino = "EF1" | "EF2" | "EM";
 
 export interface TurmaResumo {
   id:            string;
@@ -24,8 +24,16 @@ export interface TurmaResumo {
 
 // Máximo de aulas por dia para cada nível
 export const MAX_AULAS: Record<NivelEnsino, number> = {
+  EF1: 5,
   EF2: 5,
   EM:  7,
+};
+
+// Rótulo legível para cada nível de ensino
+export const LABEL_NIVEL_ENSINO: Record<NivelEnsino, string> = {
+  EF1: "Fundamental 1",
+  EF2: "Fundamental 2",
+  EM:  "Ensino Médio",
 };
 
 // ─── Matéria (com contexto de turma) ─────────────────────────────────────────

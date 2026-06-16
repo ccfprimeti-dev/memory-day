@@ -4,6 +4,7 @@ import { getSessao } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { TurmaPDFButton } from "@/components/admin/TurmaPDFButton";
+import { LABEL_NIVEL_ENSINO, type NivelEnsino } from "@/types";
 
 interface Props {
   params: { turmaId: string };
@@ -44,7 +45,7 @@ export default async function AdminTurmaPage({ params }: Props) {
             <span className="text-gradient font-orbitron">{turma.nome}</span>
           </h1>
           <p className="text-slate-500 text-sm mt-1">
-            {turma.nivelEnsino === "EM" ? "Ensino Médio" : "Fundamental 2"} · {turma.anoLetivo} · {turma.alunos.length} alunos
+            {LABEL_NIVEL_ENSINO[turma.nivelEnsino as NivelEnsino] ?? turma.nivelEnsino} · {turma.anoLetivo} · {turma.alunos.length} alunos
           </p>
         </div>
         {/* Botão PDF da turma — componente client para seleção de período */}

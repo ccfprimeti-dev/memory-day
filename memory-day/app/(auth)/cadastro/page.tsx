@@ -3,7 +3,7 @@ import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { TurmaResumo, NivelEnsino } from "@/types";
-import { MAX_AULAS } from "@/types";
+import { MAX_AULAS, LABEL_NIVEL_ENSINO } from "@/types";
 
 interface MateriaPublica {
   id:          string;
@@ -12,6 +12,7 @@ interface MateriaPublica {
   professorId: string | null;
 }
 
+const PREVIEW_EF1 = ["Português", "Matemática", "Ciências", "Artes", "Educação Física"];
 const PREVIEW_EF2 = ["Gramática", "Matemática", "Ciências", "História", "Inglês", "Física", "Álgebra", "+ 6 mais"];
 const PREVIEW_EM  = ["Branding", "Chemistry", "Biologia", "Projeto", "Pitch", "+ todas EF2"];
 
@@ -150,12 +151,63 @@ export default function CadastroPage() {
         </div>
 
         {papel === "ALUNO" ? (
-          <div className="w-full max-w-2xl">
+          <div className="w-full max-w-4xl">
             <p className="text-center font-orbitron text-xs tracking-[0.4em] text-slate-500 uppercase mb-6">
               Selecione seu nível de ensino
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+
+              {/* EF1 */}
+              <button
+                onClick={() => { setNivel("EF1"); setEtapa("formulario"); }}
+                className="group text-left rounded-2xl border border-emerald-200 bg-white/80 p-6
+                  hover:border-emerald-400 hover:bg-emerald-50/50 transition-all duration-200
+                  hover:shadow-md shadow-sm relative overflow-hidden">
+
+                <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-emerald-100/60 blur-2xl group-hover:bg-emerald-200/60 transition" />
+
+                <div className="relative">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-200
+                      flex items-center justify-center text-emerald-800 text-lg font-orbitron font-black">
+                      F
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-orbitron tracking-[0.3em] text-emerald-600/70 uppercase">
+                        Ensino
+                      </p>
+                      <h2 className="text-base font-bold text-slate-800 font-orbitron tracking-wide leading-tight">
+                        Fundamental 1
+                      </h2>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 mb-5">
+                    <div className="flex-1 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-center">
+                      <p className="text-xl font-bold text-emerald-700 font-orbitron">{MAX_AULAS.EF1}</p>
+                      <p className="text-[10px] text-emerald-600 mt-0.5">aulas / dia</p>
+                    </div>
+                    <div className="flex-1 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-center">
+                      <p className="text-xl font-bold text-emerald-700 font-orbitron">5</p>
+                      <p className="text-[10px] text-emerald-600 mt-0.5">matérias</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 mb-5">
+                    {PREVIEW_EF1.map((m) => (
+                      <span key={m}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700">
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+
+                  <p className="text-xs font-orbitron tracking-widest text-emerald-700 uppercase group-hover:text-emerald-600 transition">
+                    Selecionar →
+                  </p>
+                </div>
+              </button>
 
               {/* EF2 */}
               <button
@@ -285,7 +337,7 @@ export default function CadastroPage() {
   }
 
   // ── ETAPA 2 — Formulário de cadastro ───────────────────────────────────────
-  const labelNivel = nivel === "EM" ? "Ensino Médio" : nivel === "EF2" ? "Fundamental 2" : "";
+  const labelNivel = nivel ? LABEL_NIVEL_ENSINO[nivel] : "";
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative">

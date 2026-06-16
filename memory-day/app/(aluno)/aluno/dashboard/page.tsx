@@ -2,7 +2,8 @@ import { getSessao } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AulaCard } from "@/components/aluno/AulaCard";
 import { SelectSlot } from "@/components/aluno/SelectSlot";
-import type { FeedbackIA } from "@/types";
+import type { FeedbackIA, NivelEnsino } from "@/types";
+import { LABEL_NIVEL_ENSINO } from "@/types";
 
 function dataHoje(): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
@@ -69,7 +70,7 @@ export default async function AlunoDashboard() {
               ${nivelEnsino === "EM"
                 ? "text-slate-700 border-slate-300 bg-slate-100"
                 : "text-amber-700 border-amber-200 bg-amber-50"}`}>
-              {nivelEnsino === "EM" ? "Ensino Médio" : "Fund. 2"}
+              {LABEL_NIVEL_ENSINO[nivelEnsino as NivelEnsino] ?? nivelEnsino}
             </span>
           </div>
           <span className="font-orbitron text-xs text-amber-700 font-bold">
