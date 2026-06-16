@@ -189,6 +189,15 @@ export function TurmaPDF({ nomeTurma, anoLetivo, periodo, dados, geradoEm }: Pro
           </View>
         </View>
 
+        {/* Sem dados no período */}
+        {dados.length === 0 && (
+          <View style={{ marginTop: 32, borderWidth: 1, borderColor: cor.borda, borderRadius: 4, padding: 20, backgroundColor: cor.fundo }}>
+            <Text style={{ fontSize: 10, color: cor.muted, textAlign: "center" }}>
+              Nenhum aluno registrou atividades neste período.
+            </Text>
+          </View>
+        )}
+
         {/* Seções por matéria */}
         {dados.map((mat) => (
           <View key={mat.nomeMateria} style={s.secao}>
