@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { AulaCard } from "@/components/aluno/AulaCard";
 import { SelectSlot } from "@/components/aluno/SelectSlot";
 import type { FeedbackIA, NivelEnsino } from "@/types";
-import { LABEL_NIVEL_ENSINO } from "@/types";
+import { LABEL_NIVEL_ENSINO, MAX_AULAS } from "@/types";
 
 function dataHoje(): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
@@ -20,7 +20,7 @@ export default async function AlunoDashboard() {
     select: { nivelEnsino: true },
   });
   const nivelEnsino = turmaAluno?.nivelEnsino ?? "EF2";
-  const maxAulas    = nivelEnsino === "EM" ? 7 : 5;
+  const maxAulas    = MAX_AULAS[nivelEnsino as NivelEnsino] ?? 5;
 
   // Matérias da turma do aluno
   const todasMaterias = await prisma.subject.findMany({

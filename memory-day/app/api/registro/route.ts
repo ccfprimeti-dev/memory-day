@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, jsonInput } from "@/lib/prisma";
 import { getSessao } from "@/lib/auth";
 import { analisarRegistroAluno } from "@/lib/ai";
-import type { RegistroPayload, FeedbackIA } from "@/types";
+import type { RegistroPayload, FeedbackIA, NivelEnsino } from "@/types";
+import { MAX_AULAS } from "@/types";
 
 // GET /api/registro?data=YYYY-MM-DD
 // Retorna todos os registros do aluno logado na data informada
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
       where:  { id: aluno.turmaId },
       select: { nivelEnsino: true },
     });
-    const maxAulas = turmaAluno?.nivelEnsino === "EM" ? 7 : 5;
+    const maxAulas = MAX_AULAS[(turmaAluno?.nivelEnsino ?? "EF2") as NivelEnsino] ?? 5;
     quantidadeAulas = Math.min(quantidadeAulas, maxAulas);
 
     if (!jaExiste) {

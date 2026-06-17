@@ -26,7 +26,7 @@ export interface TurmaResumo {
 export const MAX_AULAS: Record<NivelEnsino, number> = {
   EF1: 5,
   EF2: 5,
-  EM:  7,
+  EM:  5,
 };
 
 // Rótulo legível para cada nível de ensino

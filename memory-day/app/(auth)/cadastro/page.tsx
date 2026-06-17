@@ -12,9 +12,9 @@ interface MateriaPublica {
   professorId: string | null;
 }
 
-const PREVIEW_EF1 = ["Português", "Matemática", "Ciências", "Artes", "Educação Física"];
-const PREVIEW_EF2 = ["Gramática", "Matemática", "Ciências", "História", "Inglês", "Física", "Álgebra", "+ 6 mais"];
-const PREVIEW_EM  = ["Branding", "Chemistry", "Biologia", "Projeto", "Pitch", "+ todas EF2"];
+const PREVIEW_EF1 = ["Português", "Matemática", "Ciências", "Arte", "Ed. Física", "Inglês", "História", "Geografia"];
+const PREVIEW_EF2 = ["Gramática/Grammar", "Matemática/Math", "Ciências/Science", "História/History", "Inglês/English", "Writing", "STEM", "+ 4 mais"];
+const PREVIEW_EM  = ["Grammar", "Science", "Algebra", "Geometry", "Biology 1&2", "Physics 1&2", "Chemistry 1&2", "+ mais"];
 
 type Etapa = "nivel" | "formulario";
 
@@ -189,7 +189,7 @@ export default function CadastroPage() {
                       <p className="text-[10px] text-emerald-600 mt-0.5">aulas / dia</p>
                     </div>
                     <div className="flex-1 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-center">
-                      <p className="text-xl font-bold text-emerald-700 font-orbitron">5</p>
+                      <p className="text-xl font-bold text-emerald-700 font-orbitron">8</p>
                       <p className="text-[10px] text-emerald-600 mt-0.5">matérias</p>
                     </div>
                   </div>
@@ -240,7 +240,7 @@ export default function CadastroPage() {
                       <p className="text-[10px] text-amber-600 mt-0.5">aulas / dia</p>
                     </div>
                     <div className="flex-1 rounded-lg bg-cyan-50 border border-cyan-200 px-3 py-2 text-center">
-                      <p className="text-xl font-bold text-amber-700 font-orbitron">13</p>
+                      <p className="text-xl font-bold text-amber-700 font-orbitron">11</p>
                       <p className="text-[10px] text-amber-600 mt-0.5">matérias</p>
                     </div>
                   </div>
