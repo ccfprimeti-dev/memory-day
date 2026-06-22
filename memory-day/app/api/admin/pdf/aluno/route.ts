@@ -54,44 +54,63 @@ export async function GET(req: NextRequest) {
     select: { subjectId: true, nivelIA: true },
   });
 
-  // Todos os colegas de turma
+  // Colegas de turma — EXCLUINDO o próprio aluno para não distorcer a média
   const colegas = await prisma.user.findMany({
     where: { papel: "ALUNO", turmaId },
     select: { id: true },
   });
-  const colegaIds = colegas.map((c) => c.id);
+  const colegaIds = colegas.map((c) => c.id).filter((id) => id !== alunoId);
 
-  // Entries da turma inteira no período (para calcular média)
+  // Entries de todos os colegas no período (inclui alunoId para auditoria de total de alunos)
   const entriesTurma = await prisma.entry.findMany({
     where: {
       alunoId: { in: colegaIds },
       data:    { gte: dataInicio },
     },
-    select: { subjectId: true, nivelIA: true },
+    select: { alunoId: true, subjectId: true, nivelIA: true },
   });
 
-  // Agrupa entries por matéria
-  const nivelAlunoMap: Record<string, string[]>  = {};
+  // Agrupa entries do aluno por matéria
+  const nivelAlunoMap: Record<string, string[]> = {};
   for (const e of entriesAluno) {
     if (!nivelAlunoMap[e.subjectId]) nivelAlunoMap[e.subjectId] = [];
     if (e.nivelIA) nivelAlunoMap[e.subjectId].push(e.nivelIA);
   }
 
-  const nivelTurmaMap: Record<string, string[]> = {};
+  // Média da turma: cada colega contribui com 1 nível agregado por matéria
+  // (não pool de todas as entries — evita que alunos com mais entregas pesem mais)
+  // subjectId → alunoId → nivelIA[]
+  const porColegaSubject: Record<string, Record<string, string[]>> = {};
   for (const e of entriesTurma) {
-    if (!nivelTurmaMap[e.subjectId]) nivelTurmaMap[e.subjectId] = [];
-    if (e.nivelIA) nivelTurmaMap[e.subjectId].push(e.nivelIA);
+    if (!porColegaSubject[e.subjectId])            porColegaSubject[e.subjectId] = {};
+    if (!porColegaSubject[e.subjectId][e.alunoId]) porColegaSubject[e.subjectId][e.alunoId] = [];
+    if (e.nivelIA) porColegaSubject[e.subjectId][e.alunoId].push(e.nivelIA);
+  }
+  // Para cada matéria: agrega por colega → obtém 1 nível por colega → lista desses níveis
+  const nivelTurmaMap: Record<string, string[]> = {};
+  for (const [subjectId, porAluno] of Object.entries(porColegaSubject)) {
+    nivelTurmaMap[subjectId] = [];
+    for (const niveis of Object.values(porAluno)) {
+      const n = agregarNiveis(niveis);
+      if (n) nivelTurmaMap[subjectId].push(n);
+    }
   }
 
-  // Monta dados do PDF por matéria
+  // Monta dados do PDF por matéria com informações de auditoria
   const dados = materias
     .map((mat) => {
-      const nivelAluno = agregarNiveis(nivelAlunoMap[mat.id] ?? []);
-      const nivelTurma = agregarNiveis(nivelTurmaMap[mat.id] ?? []);
+      const niveisAlunoRaw  = nivelAlunoMap[mat.id] ?? [];
+      const niveisParaTurma = nivelTurmaMap[mat.id] ?? [];
+      const nivelAluno = agregarNiveis(niveisAlunoRaw);
+      const nivelTurma = agregarNiveis(niveisParaTurma);
       return {
-        nomeMateria: mat.nome,
-        nivelAluno:  nivelAluno as NivelIA | null,
-        nivelTurma:  nivelTurma as NivelIA | null,
+        nomeMateria:       mat.nome,
+        nivelAluno:        nivelAluno as NivelIA | null,
+        nivelTurma:        nivelTurma as NivelIA | null,
+        // Dados brutos para auditoria
+        niveisAluno:       niveisAlunoRaw,          // registros brutos do aluno neste período
+        totalTurmaContrib: niveisParaTurma.length,  // colegas com pelo menos 1 entrega
+        totalColegas:      colegaIds.length,        // total de colegas na turma (excl. o próprio)
       };
     })
     .filter((m) => m.nivelAluno !== null || m.nivelTurma !== null);

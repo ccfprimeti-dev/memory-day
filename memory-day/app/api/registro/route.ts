@@ -99,12 +99,16 @@ export async function POST(req: NextRequest) {
   // Chama a IA para análise
   let feedbackIA: string;
   let lacunasIA: FeedbackIA;
-  let nivelIA: string;
+  let nivelIA: string | null;
   try {
     const analise = await analisarRegistroAluno(texto.trim(), materia.nome);
     feedbackIA = analise.resumo;
     lacunasIA  = analise;
-    nivelIA    = analise.nivel ?? "BASICO"; // fallback defensivo caso a IA omita o campo
+    // Aceita só os 3 valores válidos; null se a IA retornar algo inesperado
+    const NIVEIS_VALIDOS = ["BASICO", "INTERMEDIARIO", "AVANCADO"] as const;
+    nivelIA = (NIVEIS_VALIDOS as readonly string[]).includes(analise.nivel)
+      ? analise.nivel
+      : null;
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : String(erro);
     console.error("[/api/registro] Erro na IA:", mensagem);

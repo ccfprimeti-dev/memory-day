@@ -1,6 +1,6 @@
 // Componente PDF — Desempenho do aluno comparado à média da turma, por matéria.
 // Renderizado no servidor via renderToBuffer.
-// Para cada matéria: barra do aluno + barra da turma (duas linhas por matéria).
+// Para cada matéria: barra do aluno + barra da turma + linha de auditoria com dados brutos.
 import { Document, Page, View, Text, StyleSheet, Font } from "@react-pdf/renderer";
 import path from "path";
 import { labelNivel, corNivel, larguraBarra } from "@/lib/nivelUtils";
@@ -127,6 +127,18 @@ const s = StyleSheet.create({
     color: cor.muted,
     fontWeight: 700,
   },
+  // Linha de auditoria (abaixo das duas barras)
+  auditLinha: {
+    flexDirection: "row",
+    marginTop: 1,
+    marginBottom: 5,
+    paddingLeft: 66,
+    gap: 10,
+  },
+  auditTexto: {
+    fontSize: 6.5,
+    color: "#94a3b8",
+  },
   separador: {
     height: 1,
     backgroundColor: cor.borda,
@@ -147,11 +159,23 @@ const s = StyleSheet.create({
   rodapeTexto: { fontSize: 7, color: cor.muted },
 });
 
+// ── Converte nivelIA string para label abreviado para a linha de auditoria ────
+function labelAbrev(nivel: string): string {
+  if (nivel === "AVANCADO")      return "Avançado";
+  if (nivel === "INTERMEDIARIO") return "Interm.";
+  if (nivel === "BASICO")        return "Básico";
+  return nivel;
+}
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 interface DadosMateria {
-  nomeMateria: string;
-  nivelAluno:  NivelIA | null;
-  nivelTurma:  NivelIA | null;
+  nomeMateria:       string;
+  nivelAluno:        NivelIA | null;
+  nivelTurma:        NivelIA | null;
+  // Dados brutos para auditoria
+  niveisAluno:       string[];  // registros brutos do aluno no período
+  totalTurmaContrib: number;    // colegas com pelo menos 1 entrega no período
+  totalColegas:      number;    // total de colegas na turma (excluindo o próprio aluno)
 }
 
 interface Props {
@@ -214,7 +238,7 @@ export function AlunoPDF({ nomeAluno, nomeTurma, periodo, dados, geradoEm }: Pro
             <Text style={s.legendaTexto}>Média da turma</Text>
           </View>
           <Text style={[s.legendaTexto, { marginLeft: 8 }]}>
-            Cores da barra: Básico = vermelho · Intermediário = âmbar · Avançado = verde
+            Cores: Básico = vermelho · Intermediário = âmbar · Avançado = verde · ↳ linha cinza = dados brutos para auditoria
           </Text>
         </View>
 
@@ -228,17 +252,33 @@ export function AlunoPDF({ nomeAluno, nomeTurma, periodo, dados, geradoEm }: Pro
         )}
 
         {/* Seções por matéria */}
-        {dados.map((mat, idx) => (
-          <View key={mat.nomeMateria} style={s.secao}>
-            <Text style={s.secaoTitulo}>{mat.nomeMateria}</Text>
-            {/* Barra do aluno — cor conforme nível */}
-            <Barra rotulo="Aluno" nivel={mat.nivelAluno} corFill={corNivel(mat.nivelAluno)} />
-            {/* Barra da turma — cor azul-acinzentada para distinguir */}
-            <Barra rotulo="Turma (média)" nivel={mat.nivelTurma} corFill="#64748b" />
-            {/* Separador entre matérias (exceto a última) */}
-            {idx < dados.length - 1 && <View style={s.separador} />}
-          </View>
-        ))}
+        {dados.map((mat, idx) => {
+          const listaAluno = mat.niveisAluno.length > 0
+            ? mat.niveisAluno.map(labelAbrev).join(" · ")
+            : "nenhum registro";
+          const textoAluno = `${mat.niveisAluno.length} reg. · ${listaAluno}`;
+          const textoTurma = mat.totalColegas > 0
+            ? `${mat.totalTurmaContrib} de ${mat.totalColegas} colegas com dados`
+            : "sem colegas na turma";
+
+          return (
+            <View key={mat.nomeMateria} style={s.secao}>
+              <Text style={s.secaoTitulo}>{mat.nomeMateria}</Text>
+              {/* Barra do aluno — cor conforme nível */}
+              <Barra rotulo="Aluno" nivel={mat.nivelAluno} corFill={corNivel(mat.nivelAluno)} />
+              {/* Barra da turma — excluindo o próprio aluno */}
+              <Barra rotulo="Turma (média)" nivel={mat.nivelTurma} corFill="#64748b" />
+              {/* Linha de auditoria: dados brutos que geraram cada barra */}
+              <View style={s.auditLinha}>
+                <Text style={s.auditTexto}>↳ Aluno: {textoAluno}</Text>
+                <Text style={[s.auditTexto, { color: "#b0bec5" }]}>|</Text>
+                <Text style={s.auditTexto}>Turma: {textoTurma}</Text>
+              </View>
+              {/* Separador entre matérias (exceto a última) */}
+              {idx < dados.length - 1 && <View style={s.separador} />}
+            </View>
+          );
+        })}
 
         {/* Rodapé */}
         <View style={s.rodape} fixed>

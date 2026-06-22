@@ -1,6 +1,7 @@
 // Componente PDF — Desempenho da turma por matéria.
 // Renderizado no servidor via renderToBuffer.
 // Gráfico de barras horizontal: eixo Y = alunos, barra = nível médio no período.
+// Cada linha mostra também a contagem de registros para auditoria.
 import { Document, Page, View, Text, StyleSheet, Font } from "@react-pdf/renderer";
 import path from "path";
 import { labelNivel, corNivel, larguraBarra } from "@/lib/nivelUtils";
@@ -121,6 +122,13 @@ const s = StyleSheet.create({
     color: cor.muted,
     fontWeight: 700,
   },
+  // Contagem de registros (auditoria)
+  regCount: {
+    width: 36,
+    fontSize: 6.5,
+    color: "#94a3b8",
+    textAlign: "right",
+  },
   rodape: {
     position: "absolute",
     bottom: 20,
@@ -136,9 +144,15 @@ const s = StyleSheet.create({
 });
 
 // ── Props ─────────────────────────────────────────────────────────────────────
+interface AlunoNaPDF {
+  nomeAluno:      string;
+  nivel:          NivelIA | null;
+  totalRegistros: number; // auditoria: quantas entregas no período
+}
+
 interface DadosMateria {
   nomeMateria: string;
-  alunos: Array<{ nomeAluno: string; nivel: NivelIA | null }>;
+  alunos:      AlunoNaPDF[];
 }
 
 interface Props {
@@ -187,6 +201,9 @@ export function TurmaPDF({ nomeTurma, anoLetivo, periodo, dados, geradoEm }: Pro
             <View style={[s.legendaCor, { backgroundColor: "#cbd5e1" }]} />
             <Text style={s.legendaTexto}>Sem dados no período</Text>
           </View>
+          <Text style={[s.legendaTexto, { marginLeft: 4, color: "#94a3b8" }]}>
+            · número à direita = registros entregues no período
+          </Text>
         </View>
 
         {/* Sem dados no período */}
@@ -202,7 +219,7 @@ export function TurmaPDF({ nomeTurma, anoLetivo, periodo, dados, geradoEm }: Pro
         {dados.map((mat) => (
           <View key={mat.nomeMateria} style={s.secao}>
             <Text style={s.secaoTitulo}>{mat.nomeMateria}</Text>
-            {mat.alunos.map(({ nomeAluno, nivel }) => {
+            {mat.alunos.map(({ nomeAluno, nivel, totalRegistros }) => {
               const largura  = larguraBarra(nivel);
               const cor_fill = corNivel(nivel);
               const semDados = nivel === null;
@@ -219,6 +236,10 @@ export function TurmaPDF({ nomeTurma, anoLetivo, periodo, dados, geradoEm }: Pro
                       {labelNivel(nivel)}
                     </Text>
                   </View>
+                  {/* Contagem de registros para auditoria */}
+                  <Text style={s.regCount}>
+                    {totalRegistros > 0 ? `${totalRegistros} reg.` : "—"}
+                  </Text>
                 </View>
               );
             })}

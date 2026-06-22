@@ -66,19 +66,27 @@ export async function GET(req: NextRequest) {
   // Monta estrutura: materia → aluno → [niveis no período]
   type MapaNiveis = Record<string, Record<string, string[]>>; // subjectId → alunoId → niveis[]
   const mapa: MapaNiveis = {};
+  // Contagem de registros por aluno por matéria (para auditoria no PDF)
+  const contagem: Record<string, Record<string, number>> = {};
   for (const e of entries) {
-    if (!mapa[e.subjectId]) mapa[e.subjectId] = {};
+    if (!mapa[e.subjectId])    mapa[e.subjectId] = {};
+    if (!contagem[e.subjectId]) contagem[e.subjectId] = {};
     if (!mapa[e.subjectId][e.alunoId]) mapa[e.subjectId][e.alunoId] = [];
+    contagem[e.subjectId][e.alunoId] = (contagem[e.subjectId][e.alunoId] ?? 0) + 1;
     if (e.nivelIA) mapa[e.subjectId][e.alunoId].push(e.nivelIA);
   }
 
-  // Constrói dados para o PDF: por matéria, array de { nomeAluno, nivel }
+  // Constrói dados para o PDF: por matéria, array de { nomeAluno, nivel, totalRegistros }
   const dadosPDF = materias
     .map((mat) => {
       const porAluno = alunos.map((aluno) => {
         const niveis = mapa[mat.id]?.[aluno.id] ?? [];
         const nivel  = agregarNiveis(niveis);
-        return { nomeAluno: aluno.nome, nivel: nivel as NivelIA | null };
+        return {
+          nomeAluno:      aluno.nome,
+          nivel:          nivel as NivelIA | null,
+          totalRegistros: contagem[mat.id]?.[aluno.id] ?? 0, // auditoria
+        };
       });
       // Inclui a matéria apenas se houver ao menos um aluno com dado
       const temDados = porAluno.some((a) => a.nivel !== null);
