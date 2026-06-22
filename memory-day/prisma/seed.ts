@@ -91,11 +91,12 @@ async function main() {
 
   // ── Turmas ─────────────────────────────────────────────────────────────────
   const [
-    turma1, turma2, turma3, turma4, turma5,
+    turma1, turma1A, turma2, turma3, turma4, turma5,
     turma6, turma7, turma8, turma9,
     turma1EM, turma2EM,
   ] = await Promise.all([
     prisma.turma.create({ data: { nome: "1º",    anoLetivo: 2026, nivelEnsino: "EF1", codigoConvite: "1ANO-2026"    } }),
+    prisma.turma.create({ data: { nome: "1º A",  anoLetivo: 2026, nivelEnsino: "EF1", codigoConvite: "1ANO-A-2026"  } }),
     prisma.turma.create({ data: { nome: "2º",    anoLetivo: 2026, nivelEnsino: "EF1", codigoConvite: "2ANO-2026"    } }),
     prisma.turma.create({ data: { nome: "3º",    anoLetivo: 2026, nivelEnsino: "EF1", codigoConvite: "3ANO-2026"    } }),
     prisma.turma.create({ data: { nome: "4º",    anoLetivo: 2026, nivelEnsino: "EF1", codigoConvite: "4ANO-2026"    } }),
@@ -118,7 +119,7 @@ async function main() {
   ]);
 
   // ── Vínculos Professor <-> Turma ───────────────────────────────────────────
-  const turmasEF1 = [turma1, turma2, turma3, turma4, turma5];
+  const turmasEF1 = [turma1, turma1A, turma2, turma3, turma4, turma5];
   await prisma.turmaProfessor.createMany({
     data: [
       // EF1: Ana (Português), Carlos (Matemática), Lucia (Ciências), Tom (Inglês), Marcos (História/Geografia)
