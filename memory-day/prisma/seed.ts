@@ -2,14 +2,14 @@
  * Seed — Memory Day
  *
  * Níveis de ensino:
- *   EF1 — Ensino Fundamental 1 (1º-5º ano) → 5 aulas/dia · 8 matérias
- *   EF2 — Ensino Fundamental 2 (6º-8º ano) → 5 aulas/dia · 11 matérias (bilíngue)
- *   EM  — Ensino Médio (9º, 1º EM, 2º EM)  → 5 aulas/dia · 18 matérias (inglês)
+ *   EF1 — Ensino Fundamental 1 (5º ano)           → 5 aulas/dia · 8 matérias
+ *   EF2 — Ensino Fundamental 2 (6º-8º ano)        → 5 aulas/dia · 11 matérias (bilíngue)
+ *   EM  — Ensino Médio (9º, 1º EM, 1º EM A, 2º EM) → 5 aulas/dia · 18 matérias (inglês)
  *
  * Turmas:
- *   EF1: 1º, 2º, 3º, 4º, 5º
+ *   EF1: 5º
  *   EF2: 6º, 7º, 8º
- *   EM:  9º, 1º EM, 2º EM
+ *   EM:  9º, 1º EM, 1º EM A, 2º EM
  *
  * Usuários demo (senha: senha123):
  *   admin@escola.dev        → Admin (acesso total)
@@ -19,11 +19,11 @@
  *   aluno4@escola.dev       → Lucas   [9º]
  *   aluno5@escola.dev       → Camila  [9º]
  *   aluno6@escola.dev       → Pedro   [8º]
- *   prof.mat@escola.dev     → Carlos  (Matemática, Algebra, Geometry)
- *   prof.gram@escola.dev    → Ana     (Grammar/Gramática)
- *   prof.his@escola.dev     → Marcos  (History/História, Geography/Geografia)
- *   prof.cie@escola.dev     → Lúcia   (Science/Ciências, Biology, Physics)
- *   prof.ing@escola.dev     → Tom     (English/Inglês, Writing)
+ *   prof.mat@escola.dev     → Carlos  (Matemática/Math, Algebra, Geometry)
+ *   prof.gram@escola.dev    → Ana     (Gramática/Grammar)
+ *   prof.his@escola.dev     → Marcos  (História/History, Geografia/Geography)
+ *   prof.cie@escola.dev     → Lúcia   (Ciências/Science, Biology, Physics)
+ *   prof.ing@escola.dev     → Tom     (Inglês/English, Writing)
  *
  * Executar: npm run db:seed
  */
@@ -91,22 +91,18 @@ async function main() {
 
   // ── Turmas ─────────────────────────────────────────────────────────────────
   const [
-    turma1, turma1A, turma2, turma3, turma4, turma5,
+    turma5,
     turma6, turma7, turma8, turma9,
-    turma1EM, turma2EM,
+    turma1EM, turma1EMA, turma2EM,
   ] = await Promise.all([
-    prisma.turma.create({ data: { nome: "1º",    anoLetivo: 2026, nivelEnsino: "EF1", codigoConvite: "1ANO-2026"    } }),
-    prisma.turma.create({ data: { nome: "1º A",  anoLetivo: 2026, nivelEnsino: "EF1", codigoConvite: "1ANO-A-2026"  } }),
-    prisma.turma.create({ data: { nome: "2º",    anoLetivo: 2026, nivelEnsino: "EF1", codigoConvite: "2ANO-2026"    } }),
-    prisma.turma.create({ data: { nome: "3º",    anoLetivo: 2026, nivelEnsino: "EF1", codigoConvite: "3ANO-2026"    } }),
-    prisma.turma.create({ data: { nome: "4º",    anoLetivo: 2026, nivelEnsino: "EF1", codigoConvite: "4ANO-2026"    } }),
-    prisma.turma.create({ data: { nome: "5º",    anoLetivo: 2026, nivelEnsino: "EF1", codigoConvite: "5ANO-2026"    } }),
-    prisma.turma.create({ data: { nome: "6º",    anoLetivo: 2026, nivelEnsino: "EF2", codigoConvite: "6ANO-2026"    } }),
-    prisma.turma.create({ data: { nome: "7º",    anoLetivo: 2026, nivelEnsino: "EF2", codigoConvite: "7ANO-2026"    } }),
-    prisma.turma.create({ data: { nome: "8º",    anoLetivo: 2026, nivelEnsino: "EF2", codigoConvite: "8ANO-2026"    } }),
-    prisma.turma.create({ data: { nome: "9º",    anoLetivo: 2026, nivelEnsino: "EM",  codigoConvite: "9ANO-2026"    } }),
-    prisma.turma.create({ data: { nome: "1º EM", anoLetivo: 2026, nivelEnsino: "EM",  codigoConvite: "1ANO-EM-2026" } }),
-    prisma.turma.create({ data: { nome: "2º EM", anoLetivo: 2026, nivelEnsino: "EM",  codigoConvite: "2ANO-EM-2026" } }),
+    prisma.turma.create({ data: { nome: "5º",      anoLetivo: 2026, nivelEnsino: "EF1", codigoConvite: "5ANO-2026"      } }),
+    prisma.turma.create({ data: { nome: "6º",      anoLetivo: 2026, nivelEnsino: "EF2", codigoConvite: "6ANO-2026"      } }),
+    prisma.turma.create({ data: { nome: "7º",      anoLetivo: 2026, nivelEnsino: "EF2", codigoConvite: "7ANO-2026"      } }),
+    prisma.turma.create({ data: { nome: "8º",      anoLetivo: 2026, nivelEnsino: "EF2", codigoConvite: "8ANO-2026"      } }),
+    prisma.turma.create({ data: { nome: "9º",      anoLetivo: 2026, nivelEnsino: "EM",  codigoConvite: "9ANO-2026"      } }),
+    prisma.turma.create({ data: { nome: "1º EM",   anoLetivo: 2026, nivelEnsino: "EM",  codigoConvite: "1ANO-EM-2026"   } }),
+    prisma.turma.create({ data: { nome: "1º EM A", anoLetivo: 2026, nivelEnsino: "EM",  codigoConvite: "1ANO-EM-A-2026" } }),
+    prisma.turma.create({ data: { nome: "2º EM",   anoLetivo: 2026, nivelEnsino: "EM",  codigoConvite: "2ANO-EM-2026"   } }),
   ]);
 
   // ── Professores demo ───────────────────────────────────────────────────────
@@ -119,44 +115,46 @@ async function main() {
   ]);
 
   // ── Vínculos Professor <-> Turma ───────────────────────────────────────────
-  const turmasEF1 = [turma1, turma1A, turma2, turma3, turma4, turma5];
   await prisma.turmaProfessor.createMany({
     data: [
-      // EF1: Ana (Português), Carlos (Matemática), Lucia (Ciências), Tom (Inglês), Marcos (História/Geografia)
-      ...turmasEF1.flatMap((t) => [
-        { turmaId: t.id, professorId: pAna.id    },
-        { turmaId: t.id, professorId: pCarlos.id },
-        { turmaId: t.id, professorId: pLucia.id  },
-        { turmaId: t.id, professorId: pTom.id    },
-        { turmaId: t.id, professorId: pMarcos.id },
-      ]),
+      // EF1
+      { turmaId: turma5.id,    professorId: pAna.id    },
+      { turmaId: turma5.id,    professorId: pCarlos.id },
+      { turmaId: turma5.id,    professorId: pLucia.id  },
+      { turmaId: turma5.id,    professorId: pTom.id    },
+      { turmaId: turma5.id,    professorId: pMarcos.id },
       // EF2
-      { turmaId: turma6.id, professorId: pCarlos.id },
-      { turmaId: turma6.id, professorId: pAna.id    },
-      { turmaId: turma6.id, professorId: pMarcos.id },
-      { turmaId: turma6.id, professorId: pTom.id    },
-      { turmaId: turma7.id, professorId: pCarlos.id },
-      { turmaId: turma7.id, professorId: pAna.id    },
-      { turmaId: turma7.id, professorId: pLucia.id  },
-      { turmaId: turma7.id, professorId: pTom.id    },
-      { turmaId: turma8.id, professorId: pCarlos.id },
-      { turmaId: turma8.id, professorId: pAna.id    },
-      { turmaId: turma8.id, professorId: pLucia.id  },
-      { turmaId: turma8.id, professorId: pTom.id    },
+      { turmaId: turma6.id,    professorId: pCarlos.id },
+      { turmaId: turma6.id,    professorId: pAna.id    },
+      { turmaId: turma6.id,    professorId: pMarcos.id },
+      { turmaId: turma6.id,    professorId: pTom.id    },
+      { turmaId: turma7.id,    professorId: pCarlos.id },
+      { turmaId: turma7.id,    professorId: pAna.id    },
+      { turmaId: turma7.id,    professorId: pLucia.id  },
+      { turmaId: turma7.id,    professorId: pTom.id    },
+      { turmaId: turma8.id,    professorId: pCarlos.id },
+      { turmaId: turma8.id,    professorId: pAna.id    },
+      { turmaId: turma8.id,    professorId: pLucia.id  },
+      { turmaId: turma8.id,    professorId: pTom.id    },
       // EM
-      { turmaId: turma9.id,   professorId: pCarlos.id },
-      { turmaId: turma9.id,   professorId: pAna.id    },
-      { turmaId: turma9.id,   professorId: pMarcos.id },
-      { turmaId: turma9.id,   professorId: pTom.id    },
-      { turmaId: turma9.id,   professorId: pLucia.id  },
-      { turmaId: turma1EM.id, professorId: pCarlos.id },
-      { turmaId: turma1EM.id, professorId: pAna.id    },
-      { turmaId: turma1EM.id, professorId: pMarcos.id },
-      { turmaId: turma1EM.id, professorId: pTom.id    },
-      { turmaId: turma2EM.id, professorId: pCarlos.id },
-      { turmaId: turma2EM.id, professorId: pAna.id    },
-      { turmaId: turma2EM.id, professorId: pLucia.id  },
-      { turmaId: turma2EM.id, professorId: pTom.id    },
+      { turmaId: turma9.id,    professorId: pCarlos.id },
+      { turmaId: turma9.id,    professorId: pAna.id    },
+      { turmaId: turma9.id,    professorId: pMarcos.id },
+      { turmaId: turma9.id,    professorId: pTom.id    },
+      { turmaId: turma9.id,    professorId: pLucia.id  },
+      { turmaId: turma1EM.id,  professorId: pCarlos.id },
+      { turmaId: turma1EM.id,  professorId: pAna.id    },
+      { turmaId: turma1EM.id,  professorId: pMarcos.id },
+      { turmaId: turma1EM.id,  professorId: pTom.id    },
+      { turmaId: turma1EMA.id, professorId: pCarlos.id },
+      { turmaId: turma1EMA.id, professorId: pAna.id    },
+      { turmaId: turma1EMA.id, professorId: pMarcos.id },
+      { turmaId: turma1EMA.id, professorId: pTom.id    },
+      { turmaId: turma1EMA.id, professorId: pLucia.id  },
+      { turmaId: turma2EM.id,  professorId: pCarlos.id },
+      { turmaId: turma2EM.id,  professorId: pAna.id    },
+      { turmaId: turma2EM.id,  professorId: pLucia.id  },
+      { turmaId: turma2EM.id,  professorId: pTom.id    },
     ],
   });
 
@@ -230,15 +228,14 @@ async function main() {
   }
 
   // ── Criação das matérias por turma ────────────────────────────────────────
-  for (const t of turmasEF1) {
-    await criarMaterias(t.id, MATERIAS_EF1, atribuicoesEF1);
-  }
-  await criarMaterias(turma6.id, MATERIAS_EF2, atribuicoesEF2(pMarcos.id, null));
-  await criarMaterias(turma7.id, MATERIAS_EF2, atribuicoesEF2(null, pLucia.id));
-  await criarMaterias(turma8.id, MATERIAS_EF2, atribuicoesEF2(null, pLucia.id));
-  const ids9 = await criarMaterias(turma9.id,   MATERIAS_EM,  atribuicoesEM(pMarcos.id, pLucia.id));
-  await criarMaterias(turma1EM.id, MATERIAS_EM, atribuicoesEM(pMarcos.id, null));
-  await criarMaterias(turma2EM.id, MATERIAS_EM, atribuicoesEM(null, pLucia.id));
+  await criarMaterias(turma5.id,    MATERIAS_EF1, atribuicoesEF1);
+  await criarMaterias(turma6.id,    MATERIAS_EF2, atribuicoesEF2(pMarcos.id, null));
+  await criarMaterias(turma7.id,    MATERIAS_EF2, atribuicoesEF2(null, pLucia.id));
+  await criarMaterias(turma8.id,    MATERIAS_EF2, atribuicoesEF2(null, pLucia.id));
+  const ids9 = await criarMaterias(turma9.id,    MATERIAS_EM,  atribuicoesEM(pMarcos.id, pLucia.id));
+  await criarMaterias(turma1EM.id,  MATERIAS_EM,  atribuicoesEM(pMarcos.id, null));
+  await criarMaterias(turma1EMA.id, MATERIAS_EM,  atribuicoesEM(pMarcos.id, pLucia.id));
+  await criarMaterias(turma2EM.id,  MATERIAS_EM,  atribuicoesEM(null, pLucia.id));
 
   // ── Alunos demo ────────────────────────────────────────────────────────────
   await Promise.all([
@@ -271,11 +268,11 @@ async function main() {
   console.log("── Admin ───────────────────────────────────────────────────────────");
   console.log("  admin@escola.dev  →  Admin Geral  (senha: senha123)");
   console.log("\n── Turmas EF1 (5 aulas/dia · 8 matérias) ───────────────────────────");
-  console.log("  1º · 2º · 3º · 4º · 5º");
+  console.log("  5º");
   console.log("\n── Turmas EF2 (5 aulas/dia · 11 matérias bilíngues) ────────────────");
   console.log("  6º · 7º · 8º");
   console.log("\n── Turmas EM (5 aulas/dia · 18 matérias em inglês) ─────────────────");
-  console.log("  9º · 1º EM · 2º EM");
+  console.log("  9º · 1º EM · 1º EM A · 2º EM");
   console.log("\n── Alunos demo (senha: senha123) ───────────────────────────────────");
   console.log("  aluno1@escola.dev  →  Beatriz [9º]");
   console.log("  aluno2@escola.dev  →  Rafael  [9º]");
