@@ -46,6 +46,7 @@ export default async function AdminAlunoPage({ params }: Props) {
         alunoId={aluno.id}
         nomeAluno={aluno.nome}
         nomeTurma={aluno.turma?.nome ?? ""}
+        turmaId={params.turmaId}
         dataInicial={hoje}
       />
     </div>
