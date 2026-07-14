@@ -18,14 +18,24 @@ export function scoreParaNivel(media: number): NivelIA | null {
   return null;
 }
 
-/** Agrega uma lista de níveis em um único NivelIA representativo. */
+/**
+ * Agrega uma lista de níveis em um único NivelIA representativo usando MODA.
+ * Retorna o nível que aparece com mais frequência.
+ * Desempate: nível mais alto entre os empatados.
+ */
 export function agregarNiveis(niveis: (string | null | undefined)[]): NivelIA | null {
-  const scores = niveis
-    .map(nivelParaScore)
-    .filter((s) => s > 0);
-  if (scores.length === 0) return null;
-  const media = scores.reduce((a, b) => a + b, 0) / scores.length;
-  return scoreParaNivel(media);
+  const ORDEM: NivelIA[] = ["AVANCADO", "INTERMEDIARIO", "BASICO"];
+  const validos = niveis.filter((n): n is NivelIA =>
+    n === "BASICO" || n === "INTERMEDIARIO" || n === "AVANCADO"
+  );
+  if (validos.length === 0) return null;
+
+  const contagem: Record<string, number> = { BASICO: 0, INTERMEDIARIO: 0, AVANCADO: 0 };
+  for (const n of validos) contagem[n]++;
+
+  const maxCount = Math.max(...Object.values(contagem));
+  // Itera do mais alto ao mais baixo — o primeiro com contagem máxima vence o empate
+  return ORDEM.find((n) => contagem[n] === maxCount) ?? null;
 }
 
 /** Label legível para exibição no PDF. */
