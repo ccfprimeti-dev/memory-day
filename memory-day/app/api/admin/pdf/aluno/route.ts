@@ -9,7 +9,7 @@ import { createElement } from "react";
 import { prisma } from "@/lib/prisma";
 import { getSessao } from "@/lib/auth";
 import { AlunoPDF } from "@/components/pdf/AlunoPDF";
-import { agregarNiveis, dataInicioPeriodo } from "@/lib/nivelUtils";
+import { agregarNiveis, agregarAproveitamento, dataInicioPeriodo } from "@/lib/nivelUtils";
 import type { NivelIA } from "@/types";
 
 export async function GET(req: NextRequest) {
@@ -30,7 +30,6 @@ export async function GET(req: NextRequest) {
 
   const dataInicio = dataInicioPeriodo(periodo);
 
-  // Busca o aluno
   const aluno = await prisma.user.findUnique({
     where: { id: alunoId },
     select: { nome: true, turmaId: true, turma: { select: { nome: true } } },
@@ -41,54 +40,69 @@ export async function GET(req: NextRequest) {
 
   const turmaId = aluno.turmaId;
 
-  // Matérias da turma
   const materias = await prisma.subject.findMany({
     where: { turmaId },
     orderBy: { nome: "asc" },
     select: { id: true, nome: true },
   });
 
-  // Entries do aluno no período
+  // Entries do aluno — inclui campos BNCC
   const entriesAluno = await prisma.entry.findMany({
     where: { alunoId, data: { gte: dataInicio } },
-    select: { subjectId: true, nivelIA: true },
+    select: { subjectId: true, nivelIA: true, aproveitamento: true, habilidadeBncc: true },
   });
 
-  // Colegas de turma — EXCLUINDO o próprio aluno para não distorcer a média
+  // Colegas da turma excluindo o próprio aluno
   const colegas = await prisma.user.findMany({
     where: { papel: "ALUNO", turmaId },
     select: { id: true },
   });
   const colegaIds = colegas.map((c) => c.id).filter((id) => id !== alunoId);
 
-  // Entries de todos os colegas no período (inclui alunoId para auditoria de total de alunos)
+  // Entries dos colegas — inclui aproveitamento para média da turma
   const entriesTurma = await prisma.entry.findMany({
     where: {
       alunoId: { in: colegaIds },
       data:    { gte: dataInicio },
     },
-    select: { alunoId: true, subjectId: true, nivelIA: true },
+    select: { alunoId: true, subjectId: true, nivelIA: true, aproveitamento: true },
   });
 
-  // Agrupa entries do aluno por matéria
-  const nivelAlunoMap: Record<string, string[]> = {};
+  // Mapas do aluno por matéria
+  const nivelAlunoMap:  Record<string, string[]> = {};
+  const aprovAlunoMap:  Record<string, (number | null)[]> = {};
+  const bnccAlunoMap:   Record<string, string | null> = {}; // última habilidade BNCC registrada
+
   for (const e of entriesAluno) {
-    if (!nivelAlunoMap[e.subjectId]) nivelAlunoMap[e.subjectId] = [];
-    if (e.nivelIA) nivelAlunoMap[e.subjectId].push(e.nivelIA);
+    if (!nivelAlunoMap[e.subjectId])  nivelAlunoMap[e.subjectId]  = [];
+    if (!aprovAlunoMap[e.subjectId])  aprovAlunoMap[e.subjectId]  = [];
+    if (e.nivelIA)       nivelAlunoMap[e.subjectId].push(e.nivelIA);
+    aprovAlunoMap[e.subjectId].push(e.aproveitamento ?? null);
+    if (e.habilidadeBncc) bnccAlunoMap[e.subjectId] = e.habilidadeBncc;
   }
 
-  // Média da turma: cada colega contribui com 1 nível agregado por matéria
-  // (não pool de todas as entries — evita que alunos com mais entregas pesem mais)
-  // subjectId → alunoId → nivelIA[]
-  const porColegaSubject: Record<string, Record<string, string[]>> = {};
+  // Mapas dos colegas por matéria — cada colega contribui 1 valor agregado
+  // subjectId → alunoId → [aproveitamentos] e [niveis]
+  const porColegaSubjectAprov: Record<string, Record<string, (number | null)[]>> = {};
+  const porColegaSubjectNivel: Record<string, Record<string, string[]>> = {};
+
   for (const e of entriesTurma) {
-    if (!porColegaSubject[e.subjectId])            porColegaSubject[e.subjectId] = {};
-    if (!porColegaSubject[e.subjectId][e.alunoId]) porColegaSubject[e.subjectId][e.alunoId] = [];
-    if (e.nivelIA) porColegaSubject[e.subjectId][e.alunoId].push(e.nivelIA);
+    if (!porColegaSubjectAprov[e.subjectId])            porColegaSubjectAprov[e.subjectId] = {};
+    if (!porColegaSubjectNivel[e.subjectId])            porColegaSubjectNivel[e.subjectId] = {};
+    if (!porColegaSubjectAprov[e.subjectId][e.alunoId]) porColegaSubjectAprov[e.subjectId][e.alunoId] = [];
+    if (!porColegaSubjectNivel[e.subjectId][e.alunoId]) porColegaSubjectNivel[e.subjectId][e.alunoId] = [];
+    porColegaSubjectAprov[e.subjectId][e.alunoId].push(e.aproveitamento ?? null);
+    if (e.nivelIA) porColegaSubjectNivel[e.subjectId][e.alunoId].push(e.nivelIA);
   }
-  // Para cada matéria: agrega por colega → obtém 1 nível por colega → lista desses níveis
+
+  // Agrega turma: % médio de cada colega → média dessas médias
+  const aprovTurmaMap: Record<string, number | null> = {};
   const nivelTurmaMap: Record<string, string[]> = {};
-  for (const [subjectId, porAluno] of Object.entries(porColegaSubject)) {
+  for (const [subjectId, porAluno] of Object.entries(porColegaSubjectAprov)) {
+    const mediasColegas = Object.values(porAluno).map((vals) => agregarAproveitamento(vals));
+    aprovTurmaMap[subjectId] = agregarAproveitamento(mediasColegas);
+  }
+  for (const [subjectId, porAluno] of Object.entries(porColegaSubjectNivel)) {
     nivelTurmaMap[subjectId] = [];
     for (const niveis of Object.values(porAluno)) {
       const n = agregarNiveis(niveis);
@@ -96,24 +110,29 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Monta dados do PDF por matéria com informações de auditoria
+  // Monta dados do PDF por matéria
   const dados = materias
     .map((mat) => {
       const niveisAlunoRaw  = nivelAlunoMap[mat.id] ?? [];
+      const aprovAluno      = agregarAproveitamento(aprovAlunoMap[mat.id] ?? []);
+      const aprovTurma      = aprovTurmaMap[mat.id] ?? null;
+      const nivelAluno      = agregarNiveis(niveisAlunoRaw);
+      const nivelTurma      = agregarNiveis(nivelTurmaMap[mat.id] ?? []);
       const niveisParaTurma = nivelTurmaMap[mat.id] ?? [];
-      const nivelAluno = agregarNiveis(niveisAlunoRaw);
-      const nivelTurma = agregarNiveis(niveisParaTurma);
+
       return {
-        nomeMateria:       mat.nome,
-        nivelAluno:        nivelAluno as NivelIA | null,
-        nivelTurma:        nivelTurma as NivelIA | null,
-        // Dados brutos para auditoria
-        niveisAluno:       niveisAlunoRaw,          // registros brutos do aluno neste período
-        totalTurmaContrib: niveisParaTurma.length,  // colegas com pelo menos 1 entrega
-        totalColegas:      colegaIds.length,        // total de colegas na turma (excl. o próprio)
+        nomeMateria:        mat.nome,
+        nivelAluno:         nivelAluno as NivelIA | null,
+        nivelTurma:         nivelTurma as NivelIA | null,
+        aproveitamentoAluno: aprovAluno,
+        aproveitamentoTurma: aprovTurma,
+        habilidadeBncc:     bnccAlunoMap[mat.id] ?? null,
+        niveisAluno:        niveisAlunoRaw,
+        totalTurmaContrib:  niveisParaTurma.length,
+        totalColegas:       colegaIds.length,
       };
     })
-    .filter((m) => m.nivelAluno !== null || m.nivelTurma !== null);
+    .filter((m) => m.nivelAluno !== null || m.nivelTurma !== null || m.aproveitamentoAluno !== null);
 
   const geradoEm = new Date().toLocaleString("pt-BR", {
     timeZone: "America/Sao_Paulo",

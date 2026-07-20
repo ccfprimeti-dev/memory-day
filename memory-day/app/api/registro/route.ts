@@ -96,19 +96,30 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Chama a IA para análise
+  // Chama a IA para análise (com ancoragem BNCC pelo nível de ensino da turma)
   let feedbackIA: string;
   let lacunasIA: FeedbackIA;
   let nivelIA: string | null;
+  let aproveitamento: number | null = null;
+  let nota_conteudo:  number | null = null;
+  let nota_escrita:   number | null = null;
+  let habilidadeBncc: string | null = null;
+  let justificativa:  string | null = null;
   try {
-    const analise = await analisarRegistroAluno(texto.trim(), materia.nome);
+    const nivelEnsino = (aluno?.turmaId
+      ? (await prisma.turma.findUnique({ where: { id: aluno.turmaId }, select: { nivelEnsino: true } }))?.nivelEnsino
+      : undefined) ?? "EM";
+
+    const analise = await analisarRegistroAluno(texto.trim(), materia.nome, nivelEnsino);
     feedbackIA = analise.resumo;
     lacunasIA  = analise;
-    // Aceita só os 3 valores válidos; null se a IA retornar algo inesperado
     const NIVEIS_VALIDOS = ["BASICO", "INTERMEDIARIO", "AVANCADO"] as const;
-    nivelIA = (NIVEIS_VALIDOS as readonly string[]).includes(analise.nivel)
-      ? analise.nivel
-      : null;
+    nivelIA       = (NIVEIS_VALIDOS as readonly string[]).includes(analise.nivel) ? analise.nivel : null;
+    aproveitamento = typeof analise.aproveitamento === "number" ? analise.aproveitamento : null;
+    nota_conteudo  = typeof analise.nota_conteudo  === "number" ? analise.nota_conteudo  : null;
+    nota_escrita   = typeof analise.nota_escrita   === "number" ? analise.nota_escrita   : null;
+    habilidadeBncc = analise.habilidade_bncc_considerada ?? null;
+    justificativa  = analise.justificativa ?? null;
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : String(erro);
     console.error("[/api/registro] Erro na IA:", mensagem);
@@ -130,8 +141,13 @@ export async function POST(req: NextRequest) {
     update: {
       textoDoAluno: texto.trim(),
       feedbackIA,
-      lacunasIA: jsonInput(lacunasIA),
+      lacunasIA:     jsonInput(lacunasIA),
       nivelIA,
+      aproveitamento,
+      nota_conteudo,
+      nota_escrita,
+      habilidadeBncc,
+      justificativa,
       ...(quantidadeAulasInformada !== undefined ? { quantidadeAulas } : {}),
     },
     create: {
@@ -140,8 +156,13 @@ export async function POST(req: NextRequest) {
       data,
       textoDoAluno: texto.trim(),
       feedbackIA,
-      lacunasIA: jsonInput(lacunasIA),
+      lacunasIA:     jsonInput(lacunasIA),
       nivelIA,
+      aproveitamento,
+      nota_conteudo,
+      nota_escrita,
+      habilidadeBncc,
+      justificativa,
       quantidadeAulas,
     },
   });

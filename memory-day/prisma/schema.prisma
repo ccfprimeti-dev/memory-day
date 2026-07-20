@@ -87,9 +87,17 @@ model Entry {
   data         String   // YYYY-MM-DD
   textoDoAluno String
   feedbackIA   String?
-  lacunasIA    Json?    // { resumo, lacunas, sugestoes, nivel }
-  nivelIA      String?  // "BASICO" | "INTERMEDIARIO" | "AVANCADO" — extraído do lacunasIA para consultas agregadas
-  quantidadeAulas Int   @default(1) // quantas aulas (períodos) esse registro cobre no dia — ex: aula dupla = 2
+  lacunasIA    Json?    // { resumo, lacunas, sugestoes, nivel, aproveitamento, ... }
+  nivelIA      String?  // "BASICO" | "INTERMEDIARIO" | "AVANCADO" — extraído para consultas agregadas
+  quantidadeAulas Int   @default(1) // quantas aulas esse registro cobre no dia (ex: aula dupla = 2)
+
+  // ── Análise BNCC (preenchidos em registros novos; null em registros antigos) ──
+  aproveitamento  Float?  // 0-100 — nota final ponderada (70% conteúdo + 30% escrita)
+  nota_conteudo   Float?  // 0-100 — domínio do conteúdo vs. habilidade BNCC
+  nota_escrita    Float?  // 0-100 — clareza, organização, articulação
+  habilidadeBncc  String? // habilidade BNCC usada como gabarito (código + descrição)
+  justificativa   String? // explicação da nota — obrigatória para auditoria
+
   criadoEm     DateTime @default(now())
 
   aluno   User    @relation("AlunoRegistros", fields: [alunoId],   references: [id])
@@ -97,6 +105,20 @@ model Entry {
 
   @@unique([alunoId, subjectId, data])
 }
+
+// ── FUTURO — HabilidadeBncc ────────────────────────────────────────────────────
+// Quando cadastradas aqui, alimentam o parâmetro habilidadesEsperadas da IA,
+// substituindo a dedução automática pelo texto oficial da BNCC.
+//
+// model HabilidadeBncc {
+//   id          String  @id @default(cuid())
+//   codigo      String  // ex: "EM13CNT201"
+//   descricao   String  // texto oficial da BNCC
+//   subjectNome String  // nome da matéria (ex: "Physics 1")
+//   nivelEnsino String  // "EF1" | "EF2" | "EM"
+//   serie       String? // ex: "9º ano" (opcional — pode ser faixa de anos)
+//   @@unique([codigo, subjectNome, nivelEnsino])
+// }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Relatório agregado da turma

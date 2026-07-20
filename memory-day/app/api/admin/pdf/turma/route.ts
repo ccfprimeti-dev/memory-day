@@ -9,7 +9,7 @@ import { createElement } from "react";
 import { prisma } from "@/lib/prisma";
 import { getSessao } from "@/lib/auth";
 import { TurmaPDF } from "@/components/pdf/TurmaPDF";
-import { agregarNiveis, dataInicioPeriodo } from "@/lib/nivelUtils";
+import { agregarNiveis, agregarAproveitamento, dataInicioPeriodo } from "@/lib/nivelUtils";
 import type { NivelIA } from "@/types";
 
 export async function GET(req: NextRequest) {
@@ -30,7 +30,6 @@ export async function GET(req: NextRequest) {
 
   const dataInicio = dataInicioPeriodo(periodo);
 
-  // Busca turma
   const turma = await prisma.turma.findUnique({
     where: { id: turmaId },
     select: { nome: true, anoLetivo: true },
@@ -39,57 +38,62 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ erro: "Turma não encontrada." }, { status: 404 });
   }
 
-  // Busca matérias da turma que têm ao menos um registro no período
   const materias = await prisma.subject.findMany({
     where: { turmaId },
     orderBy: { nome: "asc" },
     select: { id: true, nome: true },
   });
 
-  // Busca todos os alunos da turma
   const alunos = await prisma.user.findMany({
     where: { papel: "ALUNO", turmaId },
     orderBy: { nome: "asc" },
     select: { id: true, nome: true },
   });
 
-  // Busca todos os entries do período para esta turma (via alunos)
   const alunoIds = alunos.map((a) => a.id);
   const entries = await prisma.entry.findMany({
     where: {
       alunoId: { in: alunoIds },
       data:    { gte: dataInicio },
     },
-    select: { alunoId: true, subjectId: true, nivelIA: true },
+    select: { alunoId: true, subjectId: true, nivelIA: true, aproveitamento: true },
   });
 
-  // Monta estrutura: materia → aluno → [niveis no período]
-  type MapaNiveis = Record<string, Record<string, string[]>>; // subjectId → alunoId → niveis[]
-  const mapa: MapaNiveis = {};
-  // Contagem de registros por aluno por matéria (para auditoria no PDF)
+  // subjectId → alunoId → [niveis]
+  const mapaNiveis: Record<string, Record<string, string[]>> = {};
+  // subjectId → alunoId → [aproveitamentos]
+  const mapaAprov: Record<string, Record<string, (number | null)[]>> = {};
+  // subjectId → alunoId → contagem de registros
   const contagem: Record<string, Record<string, number>> = {};
+
   for (const e of entries) {
-    if (!mapa[e.subjectId])    mapa[e.subjectId] = {};
-    if (!contagem[e.subjectId]) contagem[e.subjectId] = {};
-    if (!mapa[e.subjectId][e.alunoId]) mapa[e.subjectId][e.alunoId] = [];
+    if (!mapaNiveis[e.subjectId])  mapaNiveis[e.subjectId]  = {};
+    if (!mapaAprov[e.subjectId])   mapaAprov[e.subjectId]   = {};
+    if (!contagem[e.subjectId])    contagem[e.subjectId]    = {};
+
+    if (!mapaNiveis[e.subjectId][e.alunoId])  mapaNiveis[e.subjectId][e.alunoId]  = [];
+    if (!mapaAprov[e.subjectId][e.alunoId])   mapaAprov[e.subjectId][e.alunoId]   = [];
+
     contagem[e.subjectId][e.alunoId] = (contagem[e.subjectId][e.alunoId] ?? 0) + 1;
-    if (e.nivelIA) mapa[e.subjectId][e.alunoId].push(e.nivelIA);
+    if (e.nivelIA)    mapaNiveis[e.subjectId][e.alunoId].push(e.nivelIA);
+    mapaAprov[e.subjectId][e.alunoId].push(e.aproveitamento ?? null);
   }
 
-  // Constrói dados para o PDF: por matéria, array de { nomeAluno, nivel, totalRegistros }
   const dadosPDF = materias
     .map((mat) => {
       const porAluno = alunos.map((aluno) => {
-        const niveis = mapa[mat.id]?.[aluno.id] ?? [];
-        const nivel  = agregarNiveis(niveis);
+        const niveis        = mapaNiveis[mat.id]?.[aluno.id] ?? [];
+        const aprovs        = mapaAprov[mat.id]?.[aluno.id]  ?? [];
+        const nivel         = agregarNiveis(niveis) as NivelIA | null;
+        const aproveitamento = agregarAproveitamento(aprovs);
         return {
           nomeAluno:      aluno.nome,
-          nivel:          nivel as NivelIA | null,
-          totalRegistros: contagem[mat.id]?.[aluno.id] ?? 0, // auditoria
+          nivel,
+          aproveitamento,
+          totalRegistros: contagem[mat.id]?.[aluno.id] ?? 0,
         };
       });
-      // Inclui a matéria apenas se houver ao menos um aluno com dado
-      const temDados = porAluno.some((a) => a.nivel !== null);
+      const temDados = porAluno.some((a) => a.nivel !== null || a.aproveitamento !== null);
       return { nomeMateria: mat.nome, alunos: porAluno, temDados };
     })
     .filter((m) => m.temDados);

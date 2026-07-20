@@ -1,13 +1,12 @@
 // Componente PDF — Desempenho da turma por matéria.
-// Renderizado no servidor via renderToBuffer.
-// Gráfico de barras horizontal: eixo Y = alunos, barra = nível médio no período.
-// Cada linha mostra também a contagem de registros para auditoria.
+// Barras proporcionais a 0-100% quando aproveitamento BNCC disponível;
+// fallback para barras por nível (Básico/Intermediário/Avançado) em registros antigos.
 import { Document, Page, View, Text, StyleSheet, Font } from "@react-pdf/renderer";
 import path from "path";
-import { labelNivel, corNivel, larguraBarra } from "@/lib/nivelUtils";
+import { labelNivel, corNivel, larguraBarra, corAproveitamento } from "@/lib/nivelUtils";
 import type { NivelIA } from "@/types";
 
-// ── Registro de fonte (executado uma vez por processo) ────────────────────────
+// ── Registro de fonte ─────────────────────────────────────────────────────────
 let fonteOk = false;
 function registrarFonte() {
   if (fonteOk) return;
@@ -64,7 +63,6 @@ const s = StyleSheet.create({
   legendaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   legendaCor:  { width: 10, height: 10, borderRadius: 2 },
   legendaTexto:{ fontSize: 7.5, color: cor.muted },
-  // Seção por matéria
   secao: {
     marginBottom: 14,
     breakInside: "avoid",
@@ -80,7 +78,6 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#dbeafe",
   },
-  // Linha de um aluno
   linha: {
     flexDirection: "row",
     alignItems: "center",
@@ -122,7 +119,6 @@ const s = StyleSheet.create({
     color: cor.muted,
     fontWeight: 700,
   },
-  // Contagem de registros (auditoria)
   regCount: {
     width: 36,
     fontSize: 6.5,
@@ -147,7 +143,8 @@ const s = StyleSheet.create({
 interface AlunoNaPDF {
   nomeAluno:      string;
   nivel:          NivelIA | null;
-  totalRegistros: number; // auditoria: quantas entregas no período
+  aproveitamento: number | null; // null = entrada antiga; 0-100 = BNCC
+  totalRegistros: number;
 }
 
 interface DadosMateria {
@@ -158,7 +155,7 @@ interface DadosMateria {
 interface Props {
   nomeTurma: string;
   anoLetivo: number;
-  periodo:   number; // 15, 30 ou 60 dias
+  periodo:   number;
   dados:     DadosMateria[];
   geradoEm:  string;
 }
@@ -171,6 +168,8 @@ export function TurmaPDF({ nomeTurma, anoLetivo, periodo, dados, geradoEm }: Pro
     periodo === 15 ? "Últimos 15 dias" :
     periodo === 30 ? "Último mês"      :
     "Último bimestre";
+
+  const temAproveitamento = dados.some((d) => d.alunos.some((a) => a.aproveitamento !== null));
 
   return (
     <Document title={`Desempenho ${nomeTurma} — ${labelPeriodo}`} author="Memory Day">
@@ -185,25 +184,46 @@ export function TurmaPDF({ nomeTurma, anoLetivo, periodo, dados, geradoEm }: Pro
           <Text style={s.cabecalhoDir}>Gerado em {geradoEm}</Text>
         </View>
 
-        {/* Legenda de cores */}
+        {/* Legenda */}
         <View style={s.legenda}>
-          {[
-            { nivel: "BASICO"        as NivelIA, label: "Básico" },
-            { nivel: "INTERMEDIARIO" as NivelIA, label: "Intermediário" },
-            { nivel: "AVANCADO"      as NivelIA, label: "Avançado" },
-          ].map(({ nivel, label }) => (
-            <View key={nivel} style={s.legendaItem}>
-              <View style={[s.legendaCor, { backgroundColor: corNivel(nivel) }]} />
-              <Text style={s.legendaTexto}>{label}</Text>
-            </View>
-          ))}
-          <View style={s.legendaItem}>
-            <View style={[s.legendaCor, { backgroundColor: "#cbd5e1" }]} />
-            <Text style={s.legendaTexto}>Sem dados no período</Text>
-          </View>
-          <Text style={[s.legendaTexto, { marginLeft: 4, color: "#94a3b8" }]}>
-            · número à direita = registros entregues no período
-          </Text>
+          {temAproveitamento ? (
+            <>
+              {[
+                { cor: "#dc2626", label: "≤40%" },
+                { cor: "#d97706", label: "41–70%" },
+                { cor: "#059669", label: "≥71%" },
+                { cor: "#cbd5e1", label: "Sem dados" },
+              ].map(({ cor: c, label }) => (
+                <View key={label} style={s.legendaItem}>
+                  <View style={[s.legendaCor, { backgroundColor: c }]} />
+                  <Text style={s.legendaTexto}>{label}</Text>
+                </View>
+              ))}
+              <Text style={[s.legendaTexto, { marginLeft: 4, color: "#94a3b8" }]}>
+                · barras = aproveitamento BNCC (0-100%) · nº direita = registros
+              </Text>
+            </>
+          ) : (
+            <>
+              {[
+                { nivel: "BASICO"        as NivelIA, label: "Básico" },
+                { nivel: "INTERMEDIARIO" as NivelIA, label: "Intermediário" },
+                { nivel: "AVANCADO"      as NivelIA, label: "Avançado" },
+              ].map(({ nivel, label }) => (
+                <View key={nivel} style={s.legendaItem}>
+                  <View style={[s.legendaCor, { backgroundColor: corNivel(nivel) }]} />
+                  <Text style={s.legendaTexto}>{label}</Text>
+                </View>
+              ))}
+              <View style={s.legendaItem}>
+                <View style={[s.legendaCor, { backgroundColor: "#cbd5e1" }]} />
+                <Text style={s.legendaTexto}>Sem dados no período</Text>
+              </View>
+              <Text style={[s.legendaTexto, { marginLeft: 4, color: "#94a3b8" }]}>
+                · número à direita = registros entregues no período
+              </Text>
+            </>
+          )}
         </View>
 
         {/* Sem dados no período */}
@@ -219,24 +239,24 @@ export function TurmaPDF({ nomeTurma, anoLetivo, periodo, dados, geradoEm }: Pro
         {dados.map((mat) => (
           <View key={mat.nomeMateria} style={s.secao}>
             <Text style={s.secaoTitulo}>{mat.nomeMateria}</Text>
-            {mat.alunos.map(({ nomeAluno, nivel, totalRegistros }) => {
-              const largura  = larguraBarra(nivel);
-              const cor_fill = corNivel(nivel);
-              const semDados = nivel === null;
+            {mat.alunos.map(({ nomeAluno, nivel, aproveitamento, totalRegistros }) => {
+              const usarPct  = aproveitamento !== null;
+              const largura  = usarPct ? aproveitamento! : larguraBarra(nivel);
+              const fill     = usarPct ? corAproveitamento(aproveitamento) : corNivel(nivel);
+              const semDados = !usarPct && nivel === null;
+              const label    = usarPct ? `${aproveitamento}%` : labelNivel(nivel);
+
               return (
                 <View key={nomeAluno} style={s.linha}>
-                  {/* Nome do aluno — truncado */}
                   <Text style={s.nomeAluno}>{nomeAluno}</Text>
-                  {/* Barra de progresso */}
                   <View style={s.barraContainer}>
                     {largura > 0 && (
-                      <View style={[s.barraFill, { width: `${largura}%`, backgroundColor: cor_fill }]} />
+                      <View style={[s.barraFill, { width: `${largura}%`, backgroundColor: fill }]} />
                     )}
                     <Text style={semDados || largura < 30 ? s.barraLabelEscuro : s.barraLabel}>
-                      {labelNivel(nivel)}
+                      {label}
                     </Text>
                   </View>
-                  {/* Contagem de registros para auditoria */}
                   <Text style={s.regCount}>
                     {totalRegistros > 0 ? `${totalRegistros} reg.` : "—"}
                   </Text>

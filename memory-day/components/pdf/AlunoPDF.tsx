@@ -1,12 +1,12 @@
 // Componente PDF — Desempenho do aluno comparado à média da turma, por matéria.
-// Renderizado no servidor via renderToBuffer.
-// Para cada matéria: barra do aluno + barra da turma + linha de auditoria com dados brutos.
+// Barras proporcionais a 0-100% quando aproveitamento BNCC disponível;
+// fallback para barras por nível (Básico/Intermediário/Avançado) em registros antigos.
 import { Document, Page, View, Text, StyleSheet, Font } from "@react-pdf/renderer";
 import path from "path";
-import { labelNivel, corNivel, larguraBarra } from "@/lib/nivelUtils";
+import { labelNivel, corNivel, larguraBarra, corAproveitamento } from "@/lib/nivelUtils";
 import type { NivelIA } from "@/types";
 
-// ── Registro de fonte (executado uma vez por processo) ────────────────────────
+// ── Registro de fonte ─────────────────────────────────────────────────────────
 let fonteOk = false;
 function registrarFonte() {
   if (fonteOk) return;
@@ -64,11 +64,11 @@ const s = StyleSheet.create({
     borderRadius: 4,
     paddingHorizontal: 10,
     paddingVertical: 6,
+    flexWrap: "wrap",
   },
   legendaItem:  { flexDirection: "row", alignItems: "center", gap: 5 },
   legendaCor:   { width: 10, height: 10, borderRadius: 2 },
   legendaTexto: { fontSize: 7.5, color: cor.muted },
-  // Seção por matéria
   secao: {
     marginBottom: 12,
     breakInside: "avoid",
@@ -84,7 +84,6 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#dbeafe",
   },
-  // Linha de uma barra (aluno ou turma)
   linha: {
     flexDirection: "row",
     alignItems: "center",
@@ -127,13 +126,13 @@ const s = StyleSheet.create({
     color: cor.muted,
     fontWeight: 700,
   },
-  // Linha de auditoria (abaixo das duas barras)
   auditLinha: {
     flexDirection: "row",
     marginTop: 1,
     marginBottom: 5,
     paddingLeft: 66,
     gap: 10,
+    flexWrap: "wrap",
   },
   auditTexto: {
     fontSize: 6.5,
@@ -159,7 +158,6 @@ const s = StyleSheet.create({
   rodapeTexto: { fontSize: 7, color: cor.muted },
 });
 
-// ── Converte nivelIA string para label abreviado para a linha de auditoria ────
 function labelAbrev(nivel: string): string {
   if (nivel === "AVANCADO")      return "Avançado";
   if (nivel === "INTERMEDIARIO") return "Interm.";
@@ -169,13 +167,17 @@ function labelAbrev(nivel: string): string {
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 interface DadosMateria {
-  nomeMateria:       string;
-  nivelAluno:        NivelIA | null;
-  nivelTurma:        NivelIA | null;
+  nomeMateria:         string;
+  nivelAluno:          NivelIA | null;
+  nivelTurma:          NivelIA | null;
+  // BNCC (presentes em entradas novas; null em entradas antigas)
+  aproveitamentoAluno: number | null;
+  aproveitamentoTurma: number | null;
+  habilidadeBncc:      string | null;
   // Dados brutos para auditoria
-  niveisAluno:       string[];  // registros brutos do aluno no período
-  totalTurmaContrib: number;    // colegas com pelo menos 1 entrega no período
-  totalColegas:      number;    // total de colegas na turma (excluindo o próprio aluno)
+  niveisAluno:         string[];
+  totalTurmaContrib:   number;
+  totalColegas:        number;
 }
 
 interface Props {
@@ -186,19 +188,33 @@ interface Props {
   geradoEm:  string;
 }
 
-// ── Sub-componente barra ──────────────────────────────────────────────────────
-function Barra({ rotulo, nivel, corFill }: { rotulo: string; nivel: NivelIA | null; corFill: string }) {
-  const largura  = larguraBarra(nivel);
-  const semDados = nivel === null;
+// ── Barra — usa % quando aproveitamento disponível, senão usa nível ───────────
+function Barra({
+  rotulo,
+  nivel,
+  corFill,
+  aproveitamento,
+}: {
+  rotulo:         string;
+  nivel:          NivelIA | null;
+  corFill:        string;
+  aproveitamento: number | null;
+}) {
+  const usarPct  = aproveitamento !== null;
+  const largura  = usarPct ? aproveitamento! : larguraBarra(nivel);
+  const fill     = usarPct ? corAproveitamento(aproveitamento) : corFill;
+  const semDados = !usarPct && nivel === null;
+  const label    = usarPct ? `${aproveitamento}%` : labelNivel(nivel);
+
   return (
     <View style={s.linha}>
       <Text style={s.rotulo}>{rotulo}</Text>
       <View style={s.barraContainer}>
         {largura > 0 && (
-          <View style={[s.barraFill, { width: `${largura}%`, backgroundColor: corFill }]} />
+          <View style={[s.barraFill, { width: `${largura}%`, backgroundColor: fill }]} />
         )}
         <Text style={semDados || largura < 30 ? s.barraLabelEscuro : s.barraLabel}>
-          {labelNivel(nivel)}
+          {label}
         </Text>
       </View>
     </View>
@@ -213,6 +229,9 @@ export function AlunoPDF({ nomeAluno, nomeTurma, periodo, dados, geradoEm }: Pro
     periodo === 15 ? "Últimos 15 dias" :
     periodo === 30 ? "Último mês"      :
     "Último bimestre";
+
+  // Detecta se ao menos uma matéria tem aproveitamento % (novo modo BNCC)
+  const temAproveitamento = dados.some((d) => d.aproveitamentoAluno !== null);
 
   return (
     <Document title={`Desempenho ${nomeAluno} — ${labelPeriodo}`} author="Memory Day">
@@ -237,9 +256,15 @@ export function AlunoPDF({ nomeAluno, nomeTurma, periodo, dados, geradoEm }: Pro
             <View style={[s.legendaCor, { backgroundColor: "#94a3b8" }]} />
             <Text style={s.legendaTexto}>Média da turma</Text>
           </View>
-          <Text style={[s.legendaTexto, { marginLeft: 8 }]}>
-            Cores: Básico = vermelho · Intermediário = âmbar · Avançado = verde · ↳ linha cinza = dados brutos para auditoria
-          </Text>
+          {temAproveitamento ? (
+            <Text style={[s.legendaTexto, { marginLeft: 8 }]}>
+              Cores: Vermelho ≤40% · Âmbar 41–70% · Verde ≥71% · Barras = aproveitamento BNCC (0-100%)
+            </Text>
+          ) : (
+            <Text style={[s.legendaTexto, { marginLeft: 8 }]}>
+              Cores: Básico = vermelho · Intermediário = âmbar · Avançado = verde
+            </Text>
+          )}
         </View>
 
         {/* Sem dados no período */}
@@ -253,28 +278,50 @@ export function AlunoPDF({ nomeAluno, nomeTurma, periodo, dados, geradoEm }: Pro
 
         {/* Seções por matéria */}
         {dados.map((mat, idx) => {
+          const usarPct = mat.aproveitamentoAluno !== null;
+
           const listaAluno = mat.niveisAluno.length > 0
             ? mat.niveisAluno.map(labelAbrev).join(" · ")
             : "nenhum registro";
-          const textoAluno = `${mat.niveisAluno.length} reg. · ${listaAluno}`;
+          const textoAluno = usarPct
+            ? `${mat.aproveitamentoAluno}% (${mat.niveisAluno.length} reg.)`
+            : `${mat.niveisAluno.length} reg. · ${listaAluno}`;
           const textoTurma = mat.totalColegas > 0
-            ? `${mat.totalTurmaContrib} de ${mat.totalColegas} colegas com dados`
+            ? (mat.aproveitamentoTurma !== null
+                ? `${mat.aproveitamentoTurma}% · ${mat.totalTurmaContrib} de ${mat.totalColegas} colegas`
+                : `${mat.totalTurmaContrib} de ${mat.totalColegas} colegas com dados`)
             : "sem colegas na turma";
 
           return (
             <View key={mat.nomeMateria} style={s.secao}>
               <Text style={s.secaoTitulo}>{mat.nomeMateria}</Text>
-              {/* Barra do aluno — cor conforme nível */}
-              <Barra rotulo="Aluno" nivel={mat.nivelAluno} corFill={corNivel(mat.nivelAluno)} />
-              {/* Barra da turma — excluindo o próprio aluno */}
-              <Barra rotulo="Turma (média)" nivel={mat.nivelTurma} corFill="#64748b" />
-              {/* Linha de auditoria: dados brutos que geraram cada barra */}
+
+              <Barra
+                rotulo="Aluno"
+                nivel={mat.nivelAluno}
+                corFill={corNivel(mat.nivelAluno)}
+                aproveitamento={mat.aproveitamentoAluno}
+              />
+              <Barra
+                rotulo="Turma (média)"
+                nivel={mat.nivelTurma}
+                corFill="#64748b"
+                aproveitamento={mat.aproveitamentoTurma}
+              />
+
+              {/* Linha de auditoria */}
               <View style={s.auditLinha}>
                 <Text style={s.auditTexto}>↳ Aluno: {textoAluno}</Text>
                 <Text style={[s.auditTexto, { color: "#b0bec5" }]}>|</Text>
                 <Text style={s.auditTexto}>Turma: {textoTurma}</Text>
+                {mat.habilidadeBncc && (
+                  <>
+                    <Text style={[s.auditTexto, { color: "#b0bec5" }]}>|</Text>
+                    <Text style={s.auditTexto}>BNCC: {mat.habilidadeBncc}</Text>
+                  </>
+                )}
               </View>
-              {/* Separador entre matérias (exceto a última) */}
+
               {idx < dados.length - 1 && <View style={s.separador} />}
             </View>
           );

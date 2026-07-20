@@ -52,6 +52,13 @@ export interface FeedbackIA {
   lacunas:   string[];    // pontos que parecem estar faltando
   sugestoes: string[];    // 2-3 sugestões de estudo
   nivel:     NivelIA;     // classificação automática da IA
+
+  // Campos BNCC — presentes em registros novos; undefined em registros antigos
+  aproveitamento?:              number;  // 0-100 (70% conteúdo + 30% escrita)
+  nota_conteudo?:               number;  // 0-100
+  nota_escrita?:                number;  // 0-100
+  habilidade_bncc_considerada?: string;  // código + descrição da habilidade usada como gabarito
+  justificativa?:               string;  // explicação da nota — obrigatória para auditoria
 }
 
 // ─── Resposta da IA — relatório da turma ─────────────────────────────────────

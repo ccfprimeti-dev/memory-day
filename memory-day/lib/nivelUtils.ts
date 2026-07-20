@@ -62,6 +62,24 @@ export function larguraBarra(nivel: NivelIA | null): number {
   return 0;
 }
 
+/**
+ * Agrega uma lista de aproveitamentos (0-100) em um único número representativo.
+ * Usa média aritmética — alunos sem entrega (null) são excluídos.
+ */
+export function agregarAproveitamento(valores: (number | null | undefined)[]): number | null {
+  const validos = valores.filter((v): v is number => typeof v === "number" && !isNaN(v));
+  if (validos.length === 0) return null;
+  return Math.round(validos.reduce((a, b) => a + b, 0) / validos.length);
+}
+
+/** Cor de preenchimento da barra baseada no aproveitamento % (0-100). */
+export function corAproveitamento(p: number | null): string {
+  if (p === null) return "#cbd5e1"; // cinza — sem dados
+  if (p >= 71)   return "#059669"; // verde — avançado
+  if (p >= 41)   return "#d97706"; // âmbar — intermediário
+  return "#dc2626";                // vermelho — básico
+}
+
 /** Data de corte para um período em dias a partir de hoje (America/Sao_Paulo). */
 export function dataInicioPeriodo(dias: number): string {
   const d = new Date();
