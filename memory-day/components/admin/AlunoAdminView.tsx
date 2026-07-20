@@ -8,7 +8,8 @@ interface Registro {
   textoDoAluno: string;
   feedbackIA:   string | null;
   lacunasIA:    FeedbackIA | null;
-  nivelIA:      string | null;
+  nivelIA:        string | null;
+  aproveitamento: number | null;
   quantidadeAulas: number;
   materia:      { id: string; nome: string };
 }
@@ -373,7 +374,7 @@ export function AlunoAdminView({ alunoId, nomeAluno, nomeTurma, turmaId, dataIni
                   </span>
                   {nivel && (
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${corNivel(reg.nivelIA)}`}>
-                      {nivel}
+                      {nivel}{reg.aproveitamento !== null ? ` · ${reg.aproveitamento}%` : ""}
                     </span>
                   )}
                 </div>
