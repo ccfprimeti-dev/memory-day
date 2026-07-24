@@ -55,67 +55,56 @@ export async function analisarRegistroAluno(
   const labelNivel = labelNivelEnsino(nivelEnsino);
 
   const blocoBncc = habilidadesEsperadas
-    ? `As habilidades da BNCC a avaliar nesta aula são:\n"${habilidadesEsperadas}"\nUse esse gabarito como referência exclusiva.`
-    : `Com base na BNCC, identifique as habilidades esperadas para "${nomeMateria}" no ${labelNivel} e use-as como gabarito. Informe no campo "habilidade_bncc_considerada".`;
+    ? `Habilidades BNCC desta aula: "${habilidadesEsperadas}". Use como gabarito exclusivo.`
+    : `Identifique as habilidades BNCC esperadas para "${nomeMateria}" no ${labelNivel}. Registre em "habilidade_bncc_considerada".`;
 
   const resposta = await groq.chat.completions.create({
     model: MODELO,
     temperature: TEMPERATURE,
-    max_tokens: 1600,
+    max_tokens: 900,
     messages: [
       {
         role: "system",
-        content: `Você é um avaliador pedagógico especializado em ${nomeMateria} para o ${labelNivel} (BNCC). Avalie com precisão e rigor. Responda SEMPRE em JSON válido, sem texto antes ou depois.`,
+        content: `Avaliador pedagógico de ${nomeMateria} — ${labelNivel} (BNCC). Responda SOMENTE em JSON válido.`,
       },
       {
         role: "user",
         content: `${blocoBncc}
 
-O aluno escreveu o seguinte relato do que aprendeu hoje:
+Relato do aluno:
 """
 ${textoDoAluno}
 """
 
-Avalie cada subcritério de 0 a 100 (inteiros). Regras obrigatórias:
-- NÃO use apenas múltiplos de 5 ou 10. Use valores como 37, 63, 78, 84.
-- Justifique cada subcritério em exatamente UMA frase antes de atribuir a nota.
-- Dois textos semelhantes devem receber notas próximas mas distintas (ex.: 61 e 67).
+Avalie 6 subcritérios de 0–100 (inteiro). Use valores irregulares (ex: 37, 63, 78) — nunca apenas múltiplos de 10. Escreva 1 frase de justificativa por subcritério.
 
-CONTEÚDO — avalie cada dimensão separadamente:
-• correcao_conceitual: os conceitos usados estão corretos? (0 = erros conceituais graves; 100 = totalmente correto)
-• completude: cobriu o que era esperado para esta aula segundo a BNCC? (0 = quase nada; 100 = cobriu tudo)
-• profundidade: demonstrou aplicação e compreensão além da definição? (0 = só copiou termos; 100 = explicou com exemplos e relações)
+CONTEÚDO:
+• correcao_conceitual: conceitos corretos? (0=erros graves, 100=correto)
+• completude: cobriu o esperado pela BNCC? (0=nada, 100=tudo)
+• profundidade: vai além da definição? (0=só termos, 100=exemplos e relações)
 
-ESCRITA — avalie cada dimensão separadamente:
-• clareza: o texto é compreensível? (0 = incompreensível; 100 = cristalino)
-• organizacao: há sequência lógica e estrutura? (0 = caótico; 100 = muito bem organizado)
-• articulacao: conectou ideias com as próprias palavras? (0 = colagem de termos; 100 = texto autoral e articulado)
+ESCRITA:
+• clareza: texto compreensível? (0=confuso, 100=cristalino)
+• organizacao: sequência lógica? (0=caótico, 100=organizado)
+• articulacao: palavras próprias? (0=termos colados, 100=texto autoral)
 
-Responda EXCLUSIVAMENTE com este JSON (sem texto fora dele):
+JSON (português do Brasil):
 {
   "conteudo": {
-    "correcao_conceitual": <inteiro 0-100>,
-    "correcao_justificativa": "<uma frase>",
-    "completude": <inteiro 0-100>,
-    "completude_justificativa": "<uma frase>",
-    "profundidade": <inteiro 0-100>,
-    "profundidade_justificativa": "<uma frase>"
+    "correcao_conceitual": N, "correcao_justificativa": "...",
+    "completude": N, "completude_justificativa": "...",
+    "profundidade": N, "profundidade_justificativa": "..."
   },
   "escrita": {
-    "clareza": <inteiro 0-100>,
-    "clareza_justificativa": "<uma frase>",
-    "organizacao": <inteiro 0-100>,
-    "organizacao_justificativa": "<uma frase>",
-    "articulacao": <inteiro 0-100>,
-    "articulacao_justificativa": "<uma frase>"
+    "clareza": N, "clareza_justificativa": "...",
+    "organizacao": N, "organizacao_justificativa": "...",
+    "articulacao": N, "articulacao_justificativa": "..."
   },
-  "habilidade_bncc_considerada": "<código BNCC e descrição resumida>",
-  "resumo": "<2-3 frases sobre o que o aluno demonstrou entender>",
-  "lacunas": ["conceito ausente 1", "conceito ausente 2"],
-  "sugestoes": ["sugestão de estudo 1", "sugestão de estudo 2"]
-}
-
-Responda em português do Brasil.`,
+  "habilidade_bncc_considerada": "...",
+  "resumo": "2-3 frases",
+  "lacunas": ["..."],
+  "sugestoes": ["..."]
+}`,
       },
     ],
   });
