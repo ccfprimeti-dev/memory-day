@@ -7,6 +7,7 @@ interface Props {
 }
 
 const PERIODOS = [
+  { valor:  5, label: "Últimos 5 dias"  },
   { valor: 15, label: "Últimos 15 dias" },
   { valor: 30, label: "Último mês"      },
   { valor: 60, label: "Último bimestre" },

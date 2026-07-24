@@ -226,6 +226,7 @@ export function AlunoPDF({ nomeAluno, nomeTurma, periodo, dados, geradoEm }: Pro
   registrarFonte();
 
   const labelPeriodo =
+    periodo ===  5 ? "Últimos 5 dias"  :
     periodo === 15 ? "Últimos 15 dias" :
     periodo === 30 ? "Último mês"      :
     "Último bimestre";

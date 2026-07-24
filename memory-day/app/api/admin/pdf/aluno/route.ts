@@ -24,8 +24,8 @@ export async function GET(req: NextRequest) {
   if (!alunoId) {
     return NextResponse.json({ erro: "alunoId obrigatório." }, { status: 400 });
   }
-  if (![15, 30, 60].includes(periodo)) {
-    return NextResponse.json({ erro: "periodo deve ser 15, 30 ou 60." }, { status: 400 });
+  if (![5, 15, 30, 60].includes(periodo)) {
+    return NextResponse.json({ erro: "periodo deve ser 5, 15, 30 ou 60." }, { status: 400 });
   }
 
   const dataInicio = dataInicioPeriodo(periodo);
