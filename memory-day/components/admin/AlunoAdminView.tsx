@@ -2,6 +2,7 @@
 // Visão do aluno para o admin: seletor de dia, registros do dia e geração de PDF.
 import { useState, useEffect } from "react";
 import type { FeedbackIA } from "@/types";
+import { AdminDayView } from "@/components/admin/AdminDayView";
 
 interface Registro {
   id:           string;
@@ -12,11 +13,6 @@ interface Registro {
   aproveitamento: number | null;
   quantidadeAulas: number;
   materia:      { id: string; nome: string };
-}
-
-interface Materia {
-  id:   string;
-  nome: string;
 }
 
 interface Props {
@@ -52,18 +48,10 @@ export function AlunoAdminView({ alunoId, nomeAluno, nomeTurma, turmaId, dataIni
   const [data,       setData]       = useState(dataInicial);
   const [registros,  setRegistros]  = useState<Registro[]>([]);
   const [carregando, setCarregando] = useState(false);
-  const [periodo,    setPeriodo]    = useState(30);
-  const [gerandoPDF, setGerandoPDF] = useState(false);
-
-  // Form de novo registro
-  const [formAberto,         setFormAberto]         = useState(false);
-  const [materias,           setMaterias]           = useState<Materia[]>([]);
-  const [carregandoMaterias, setCarregandoMaterias] = useState(false);
-  const [novoData,           setNovoData]           = useState(dataInicial);
-  const [novoSubjectId,      setNovoSubjectId]      = useState("");
-  const [novoTexto,          setNovoTexto]          = useState("");
-  const [enviando,           setEnviando]           = useState(false);
-  const [mensagem,           setMensagem]           = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
+  const [periodo,         setPeriodo]         = useState(30);
+  const [gerandoPDF,      setGerandoPDF]      = useState(false);
+  const [diaCompletoAberto, setDiaCompletoAberto] = useState(false);
+  const [mensagem,        setMensagem]        = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
 
   // Carrega registros sempre que a data muda
   useEffect(() => {
@@ -75,55 +63,6 @@ export function AlunoAdminView({ alunoId, nomeAluno, nomeTurma, turmaId, dataIni
       .catch(() => setRegistros([]))
       .finally(() => setCarregando(false));
   }, [alunoId, data]);
-
-  function abrirForm() {
-    setFormAberto(true);
-    setMensagem(null);
-    setNovoData(data);
-    setNovoSubjectId("");
-    setNovoTexto("");
-
-    if (materias.length === 0) {
-      setCarregandoMaterias(true);
-      fetch(`/api/materias/publicas?turmaId=${turmaId}`)
-        .then((r) => r.json())
-        .then((d: Materia[]) => setMaterias(d))
-        .catch(() => setMaterias([]))
-        .finally(() => setCarregandoMaterias(false));
-    }
-  }
-
-  async function handleEnviar(e: React.FormEvent) {
-    e.preventDefault();
-    if (!novoData || !novoSubjectId || novoTexto.trim().length < 20) return;
-
-    setEnviando(true);
-    setMensagem(null);
-    try {
-      const res = await fetch("/api/admin/registro", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ alunoId, subjectId: novoSubjectId, data: novoData, texto: novoTexto }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setMensagem({ tipo: "erro", texto: json.erro ?? "Erro ao salvar registro." });
-        return;
-      }
-      const msg = json.atualizado
-        ? "Registro atualizado — IA re-analisou o texto."
-        : "Registro criado com sucesso!";
-      setMensagem({ tipo: "ok", texto: msg });
-      setFormAberto(false);
-      setNovoTexto("");
-      // Navega para a data do registro criado para exibir na lista
-      setData(novoData);
-    } catch {
-      setMensagem({ tipo: "erro", texto: "Falha na conexão." });
-    } finally {
-      setEnviando(false);
-    }
-  }
 
   async function handlePDF() {
     setGerandoPDF(true);
@@ -164,15 +103,15 @@ export function AlunoAdminView({ alunoId, nomeAluno, nomeTurma, turmaId, dataIni
 
         {/* Ações */}
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Botão adicionar registro */}
+          {/* Botão preencher dia completo */}
           <button
-            onClick={abrirForm}
+            onClick={() => setDiaCompletoAberto(true)}
             className="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition-all
               bg-amber-50 border border-amber-300 text-amber-700
               hover:bg-amber-100 hover:border-amber-400
               flex items-center gap-2"
           >
-            + Adicionar registro
+            + Preencher dia completo
           </button>
 
           {/* PDF do aluno */}
@@ -219,116 +158,15 @@ export function AlunoAdminView({ alunoId, nomeAluno, nomeTurma, turmaId, dataIni
         </div>
       )}
 
-      {/* Formulário de novo registro */}
-      {formAberto && (
-        <div className="glass-card rounded-xl p-5 mb-5 border border-amber-200 bg-amber-50/40">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-widest font-orbitron">
-              Novo registro (admin)
-            </h2>
-            <button
-              onClick={() => { setFormAberto(false); setMensagem(null); }}
-              className="text-slate-400 hover:text-slate-600 text-lg leading-none"
-              aria-label="Fechar"
-            >
-              ×
-            </button>
-          </div>
-
-          <form onSubmit={handleEnviar} className="space-y-4">
-            {/* Data */}
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5">
-                Data do registro
-              </label>
-              <input
-                type="date"
-                value={novoData}
-                onChange={(e) => setNovoData(e.target.value)}
-                required
-                className="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm text-slate-800
-                  focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition w-full sm:w-auto"
-              />
-            </div>
-
-            {/* Matéria */}
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5">
-                Matéria
-              </label>
-              {carregandoMaterias ? (
-                <p className="text-sm text-slate-400">Carregando matérias...</p>
-              ) : (
-                <select
-                  value={novoSubjectId}
-                  onChange={(e) => setNovoSubjectId(e.target.value)}
-                  required
-                  className="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm text-slate-800
-                    focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition w-full sm:w-72"
-                >
-                  <option value="">Selecione uma matéria…</option>
-                  {materias.map((m) => (
-                    <option key={m.id} value={m.id}>{m.nome}</option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Texto */}
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5">
-                Texto do registro
-                <span className="normal-case font-normal text-slate-400 ml-1">(mín. 20 caracteres)</span>
-              </label>
-              <textarea
-                value={novoTexto}
-                onChange={(e) => setNovoTexto(e.target.value)}
-                required
-                rows={5}
-                placeholder="Escreva o relato do aluno sobre o que aprendeu nesta aula…"
-                className="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-800
-                  focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition
-                  resize-y placeholder:text-slate-300"
-              />
-              <p className="text-xs text-slate-400 mt-1">
-                {novoTexto.trim().length} caracteres
-                {novoTexto.trim().length > 0 && novoTexto.trim().length < 20 && (
-                  <span className="text-red-400 ml-1">— faltam {20 - novoTexto.trim().length}</span>
-                )}
-              </p>
-            </div>
-
-            {/* Ações */}
-            <div className="flex items-center gap-3 pt-1">
-              <button
-                type="submit"
-                disabled={enviando || !novoData || !novoSubjectId || novoTexto.trim().length < 20}
-                className="px-5 py-2 rounded-lg text-sm font-semibold tracking-wide transition-all
-                  bg-gradient-to-r from-slate-900 via-amber-600 to-amber-400
-                  hover:from-slate-800 hover:via-amber-500 hover:to-amber-300
-                  disabled:opacity-40 disabled:cursor-not-allowed
-                  text-white flex items-center gap-2 shadow-sm"
-              >
-                {enviando ? (
-                  <>
-                    <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                    </svg>
-                    Analisando com IA…
-                  </>
-                ) : "Salvar e analisar"}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setFormAberto(false); setMensagem(null); }}
-                className="px-4 py-2 rounded-lg text-sm text-slate-500 hover:text-slate-700 transition"
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
+      {/* Painel de dia completo */}
+      {diaCompletoAberto && (
+        <AdminDayView
+          alunoId={alunoId}
+          turmaId={turmaId}
+          dataHoje={data}
+          onSalvo={(d) => { setData(d); setDiaCompletoAberto(false); }}
+          onFechar={() => setDiaCompletoAberto(false)}
+        />
       )}
 
       {/* Seletor de dia */}
