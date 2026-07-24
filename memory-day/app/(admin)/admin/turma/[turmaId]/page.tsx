@@ -26,6 +26,30 @@ export default async function AdminTurmaPage({ params }: Props) {
 
   if (!turma) notFound();
 
+  // Contagem de entregas por aluno: completo = todas as matérias no dia; incompleto = parcial
+  const totalMaterias = await prisma.subject.count({ where: { turmaId: turma.id } });
+  const alunoIds = turma.alunos.map((a) => a.id);
+
+  // Agrupa entries por (alunoId, data) e conta quantas matérias cada aluno entregou naquele dia
+  const grupos = alunoIds.length > 0
+    ? await prisma.entry.groupBy({
+        by: ["alunoId", "data"],
+        where: { alunoId: { in: alunoIds } },
+        _count: { subjectId: true },
+      })
+    : [];
+
+  // Monta mapa: alunoId → { completos, incompletos }
+  const statsMap: Record<string, { completos: number; incompletos: number }> = {};
+  for (const g of grupos) {
+    if (!statsMap[g.alunoId]) statsMap[g.alunoId] = { completos: 0, incompletos: 0 };
+    if (totalMaterias > 0 && g._count.subjectId >= totalMaterias) {
+      statsMap[g.alunoId].completos++;
+    } else {
+      statsMap[g.alunoId].incompletos++;
+    }
+  }
+
   return (
     <div>
       {/* Breadcrumb */}
@@ -65,25 +89,38 @@ export default async function AdminTurmaPage({ params }: Props) {
             </p>
           </div>
           <div className="divide-y divide-slate-100">
-            {turma.alunos.map((aluno, idx) => (
-              <Link key={aluno.id}
-                href={`/admin/turma/${turma.id}/aluno/${aluno.id}`}
-                className="flex items-center gap-4 px-5 py-3.5 hover:bg-amber-50/50 transition group">
-                {/* Avatar com inicial */}
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-100 to-yellow-100 border border-amber-200 flex items-center justify-center shrink-0">
-                  <span className="font-bold text-sm text-amber-800">{aluno.nome.charAt(0)}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">{aluno.nome}</p>
-                  <p className="text-xs text-slate-400 truncate">{aluno.email}</p>
-                </div>
-                <span className="text-xs text-slate-400 font-orbitron shrink-0">#{idx + 1}</span>
-                <svg className="h-4 w-4 text-amber-400 opacity-0 group-hover:opacity-100 transition shrink-0"
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-                </svg>
-              </Link>
-            ))}
+            {turma.alunos.map((aluno, idx) => {
+              const stats = statsMap[aluno.id] ?? { completos: 0, incompletos: 0 };
+              const temDados = stats.completos > 0 || stats.incompletos > 0;
+              return (
+                <Link key={aluno.id}
+                  href={`/admin/turma/${turma.id}/aluno/${aluno.id}`}
+                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-amber-50/50 transition group">
+                  {/* Avatar com inicial */}
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-100 to-yellow-100 border border-amber-200 flex items-center justify-center shrink-0">
+                    <span className="font-bold text-sm text-amber-800">{aluno.nome.charAt(0)}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{aluno.nome}</p>
+                    <p className="text-xs text-slate-400 truncate">{aluno.email}</p>
+                  </div>
+                  {/* Badges de entregas: amarelo = incompletos, verde = completos */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div title="Incompletos" className="w-9 h-9 rounded-lg bg-amber-100 border border-amber-300 flex items-center justify-center">
+                      <span className="font-bold text-sm text-amber-700">{stats.incompletos}</span>
+                    </div>
+                    <div title="Completos" className="w-9 h-9 rounded-lg bg-emerald-100 border border-emerald-300 flex items-center justify-center">
+                      <span className="font-bold text-sm text-emerald-700">{stats.completos}</span>
+                    </div>
+                  </div>
+                  <span className="text-xs text-slate-400 font-orbitron shrink-0">#{idx + 1}</span>
+                  <svg className="h-4 w-4 text-amber-400 opacity-0 group-hover:opacity-100 transition shrink-0"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}
