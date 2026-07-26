@@ -61,35 +61,47 @@ export async function analisarRegistroAluno(
   const resposta = await groq.chat.completions.create({
     model: MODELO,
     temperature: TEMPERATURE,
-    max_tokens: 900,
+    max_tokens: 1000,
     messages: [
       {
         role: "system",
-        content: `Avaliador pedagógico de ${nomeMateria} — ${labelNivel} (BNCC). Responda SOMENTE em JSON válido.`,
+        content: `Avaliador pedagógico de ${nomeMateria} — ${labelNivel} (BNCC). Você avalia O TEXTO DO ALUNO como evidência do aprendizado DELE — não avalia o tema, a aula nem o material didático. Responda SOMENTE em JSON válido.`,
       },
       {
         role: "user",
         content: `${blocoBncc}
 
-Relato do aluno:
+Texto do aluno:
 """
 ${textoDoAluno}
 """
 
-Avalie 6 subcritérios de 0–100 (inteiro). Use valores irregulares (ex: 37, 63, 78) — nunca apenas múltiplos de 10. Escreva 1 frase de justificativa por subcritério.
+AVISO CRÍTICO:
+- Afirmar que "aprendeu" ou "entendeu" NÃO é evidência de aprendizado.
+- Resenhar o material externo ("o documentário foi bom") também NÃO é evidência.
+- Apenas conteúdo específico e verificável conta: fatos, datas, nomes, conceitos explicados, exemplos, raciocínios com as palavras do aluno.
 
-CONTEÚDO:
-• correcao_conceitual: conceitos corretos? (0=erros graves, 100=correto)
-• completude: cobriu o esperado pela BNCC? (0=nada, 100=tudo)
-• profundidade: vai além da definição? (0=só termos, 100=exemplos e relações)
+PASSO 1 — OBRIGATÓRIO antes de qualquer nota:
+Liste em "evidencias_concretas" SOMENTE os fatos, datas, nomes, conceitos ou raciocínios específicos que o aluno EFETIVAMENTE escreveu. Afirmações genéricas não entram. Se não houver nada concreto, a lista fica vazia [].
+REGRA INVIOLÁVEL: se "evidencias_concretas" estiver vazia ou tiver apenas afirmações genéricas, as três notas de CONTEÚDO devem ser ≤ 20.
 
-ESCRITA:
+PASSO 2 — Pontue com base no que está em "evidencias_concretas":
+
+CONTEÚDO (use valores irregulares: 37, 63, 78 — nunca só múltiplos de 10):
+• correcao_conceitual: dos itens concretos listados, quantos estão factualmente corretos? Lista vazia → 0.
+• completude: quantos aspectos esperados pela BNCC foram cobertos pelos itens concretos? Lista vazia → 0.
+• profundidade: os itens concretos mostram raciocínio, exemplos ou relações além da definição? Lista vazia ou superficial → ≤ 15.
+
+ESCRITA (avalie a produção escrita independente do conteúdo):
 • clareza: texto compreensível? (0=confuso, 100=cristalino)
 • organizacao: sequência lógica? (0=caótico, 100=organizado)
 • articulacao: palavras próprias? (0=termos colados, 100=texto autoral)
 
+Escreva 1 frase de justificativa por subcritério.
+
 JSON (português do Brasil):
 {
+  "evidencias_concretas": ["..."],
   "conteudo": {
     "correcao_conceitual": N, "correcao_justificativa": "...",
     "completude": N, "completude_justificativa": "...",
@@ -113,9 +125,14 @@ JSON (português do Brasil):
   const raw = JSON.parse(extrairJSON(textoResposta));
 
   // ── CÁLCULO EM CÓDIGO — a IA fornece os subcritérios, o código calcula tudo ──
-  const correcao   = raw.conteudo?.correcao_conceitual ?? 0;
-  const completude = raw.conteudo?.completude          ?? 0;
-  const profund    = raw.conteudo?.profundidade        ?? 0;
+  // Trava de conteúdo: se a IA não encontrou evidências concretas, cap em 20.
+  // Defesa em profundidade — cobre casos em que o modelo ignora a regra inviolável do prompt.
+  const evidencias  = Array.isArray(raw.evidencias_concretas) ? raw.evidencias_concretas as unknown[] : [];
+  const capConteudo = evidencias.length === 0 ? 20 : 100;
+
+  const correcao   = Math.min(raw.conteudo?.correcao_conceitual ?? 0, capConteudo);
+  const completude = Math.min(raw.conteudo?.completude          ?? 0, capConteudo);
+  const profund    = Math.min(raw.conteudo?.profundidade        ?? 0, capConteudo);
   const clareza    = raw.escrita?.clareza              ?? 0;
   const organizac  = raw.escrita?.organizacao          ?? 0;
   const articul    = raw.escrita?.articulacao          ?? 0;
