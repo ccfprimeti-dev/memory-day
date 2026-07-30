@@ -4,6 +4,7 @@ import { AulaCard } from "@/components/aluno/AulaCard";
 import { SelectSlot } from "@/components/aluno/SelectSlot";
 import type { FeedbackIA, NivelEnsino } from "@/types";
 import { LABEL_NIVEL_ENSINO, MAX_AULAS } from "@/types";
+import Link from "next/link";
 
 function dataHoje(): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
@@ -45,19 +46,27 @@ export default async function AlunoDashboard() {
   return (
     <div>
       {/* Cabeçalho */}
-      <div className="mb-8">
-        <p className="font-orbitron text-[10px] tracking-[0.4em] text-amber-600/70 uppercase mb-1">
-          Painel do Aluno
-        </p>
-        <h1 className="text-2xl font-bold text-slate-800">
-          Olá, <span className="text-gradient font-orbitron">{usuario.nome.split(" ")[0]}</span>
-        </h1>
-        <p className="text-slate-500 text-sm mt-1 capitalize">
-          {new Date().toLocaleDateString("pt-BR", {
-            weekday: "long", day: "numeric", month: "long", year: "numeric",
-            timeZone: "America/Sao_Paulo",
-          })}
-        </p>
+      <div className="mb-8 flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <p className="font-orbitron text-[10px] tracking-[0.4em] text-amber-600/70 uppercase mb-1">
+            Painel do Aluno
+          </p>
+          <h1 className="text-2xl font-bold text-slate-800">
+            Olá, <span className="text-gradient font-orbitron">{usuario.nome.split(" ")[0]}</span>
+          </h1>
+          <p className="text-slate-500 text-sm mt-1 capitalize">
+            {new Date().toLocaleDateString("pt-BR", {
+              weekday: "long", day: "numeric", month: "long", year: "numeric",
+              timeZone: "America/Sao_Paulo",
+            })}
+          </p>
+        </div>
+        <Link
+          href="/aluno/trocar-senha"
+          className="text-xs text-slate-400 hover:text-amber-600 transition self-start mt-1"
+        >
+          Trocar senha
+        </Link>
       </div>
 
       {/* Barra de progresso */}

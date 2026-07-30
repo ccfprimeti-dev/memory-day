@@ -25,16 +25,32 @@ export default async function AdminPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <p className="font-orbitron text-[10px] tracking-[0.4em] text-amber-600/70 uppercase mb-1">
-          Painel Administrativo
-        </p>
-        <h1 className="text-2xl font-bold text-slate-800">
-          Turmas <span className="text-gradient font-orbitron">cadastradas</span>
-        </h1>
-        <p className="text-slate-500 text-sm mt-1">
-          Selecione uma turma para ver os alunos e gerar relatórios.
-        </p>
+      <div className="mb-8 flex items-start justify-between flex-wrap gap-4">
+        <div>
+          <p className="font-orbitron text-[10px] tracking-[0.4em] text-amber-600/70 uppercase mb-1">
+            Painel Administrativo
+          </p>
+          <h1 className="text-2xl font-bold text-slate-800">
+            Turmas <span className="text-gradient font-orbitron">cadastradas</span>
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Selecione uma turma para ver os alunos e gerar relatórios.
+          </p>
+        </div>
+
+        {/* Atalhos administrativos */}
+        <div className="flex gap-2 flex-wrap">
+          <Link href="/admin/usuarios"
+            className="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-200
+              bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition">
+            Usuários
+          </Link>
+          <Link href="/admin/importar"
+            className="px-4 py-2 rounded-lg text-sm font-semibold border border-amber-200
+              bg-amber-50 text-amber-700 hover:bg-amber-100 hover:border-amber-300 transition">
+            + Importar alunos
+          </Link>
+        </div>
       </div>
 
       {turmas.length === 0 && (
