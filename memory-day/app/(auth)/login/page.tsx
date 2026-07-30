@@ -141,28 +141,12 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Contas demo */}
-            <div className="mt-6 pt-5 border-t border-slate-100">
-              <p className="text-[10px] font-orbitron tracking-[0.3em] text-slate-400 uppercase mb-3">
-                Contas demo · senha: senha123
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { label: "Alunos", items: ["aluno1@escola.dev", "aluno2@escola.dev"] },
-                  { label: "Professores", items: ["prof.mat@escola.dev", "prof.gram@escola.dev"] },
-                  { label: "Admin", items: ["admin@escola.dev"] },
-                ].map((col) => (
-                  <div key={col.label} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                    <p className="text-[10px] font-orbitron tracking-widest text-amber-600/70 uppercase mb-1.5">{col.label}</p>
-                    {col.items.map((item) => (
-                      <button key={item} onClick={() => setEmail(item)}
-                        className="block text-[11px] text-slate-500 hover:text-amber-600 transition-colors w-full text-left py-0.5">
-                        {item}
-                      </button>
-                    ))}
-                  </div>
-                ))}
-              </div>
+            {/* Esqueci minha senha */}
+            <div className="mt-5 pt-4 border-t border-slate-100 text-center">
+              <Link href="/esqueci-senha"
+                className="text-[11px] text-slate-400 hover:text-amber-600 transition font-orbitron tracking-wide">
+                Esqueci minha senha
+              </Link>
             </div>
         </div>
       </div>
