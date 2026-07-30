@@ -41,13 +41,14 @@ export default function LoginPage() {
       {/* ── HERO ─────────────────────────────────── */}
       <div className="text-center mb-10 select-none">
 
-        {/* Logo com halo pulsante */}
+        {/* Logo da escola */}
         <div className="relative inline-flex items-center justify-center mb-8">
-          <div className="absolute w-28 h-28 rounded-full bg-amber-400/20 blur-2xl animate-pulse" />
-          <div className="absolute w-20 h-20 rounded-full bg-slate-800/10 blur-xl animate-pulse" style={{ animationDelay: "1s" }} />
-          <div className="relative w-20 h-20 rounded-2xl tech-card flex items-center justify-center p-3">
-            <img src="/logo.svg" alt="Memory Day" className="w-full h-full animate-float" />
-          </div>
+          <div className="absolute w-40 h-20 rounded-full bg-amber-400/15 blur-2xl animate-pulse" />
+          <img
+            src="/prime-logo.png"
+            alt="Prime Bilingual School"
+            className="relative h-14 w-auto drop-shadow-md"
+          />
         </div>
 
         {/* Nome principal — partículas interativas */}

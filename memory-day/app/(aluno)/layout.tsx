@@ -15,11 +15,16 @@ export default async function AlunoLayout({ children }: { children: React.ReactN
       <nav className="glass sticky top-0 z-20">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/aluno/dashboard" className="flex items-center gap-2.5">
-              <img src="/logo.svg" alt="Logo" className="w-7 h-7" />
-              <span className="font-orbitron font-bold text-sm tracking-widest text-gradient-gold">
-                MEMORY DAY
-              </span>
+            <Link href="/aluno/dashboard" className="flex items-center gap-3">
+              <img src="/prime-escudo.png" alt="Prime Bilingual School" className="h-8 w-auto" />
+              <div className="hidden sm:flex flex-col leading-none">
+                <span className="font-orbitron font-bold text-[11px] tracking-widest text-gradient-gold">
+                  MEMORY DAY
+                </span>
+                <span className="text-[9px] tracking-[0.2em] text-slate-400 uppercase mt-0.5">
+                  Prime Bilingual School
+                </span>
+              </div>
             </Link>
             <div className="hidden sm:flex items-center gap-1">
               {[

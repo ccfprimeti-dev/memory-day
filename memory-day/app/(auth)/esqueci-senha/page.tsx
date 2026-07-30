@@ -48,9 +48,11 @@ export default function EsqueciSenhaPage() {
       <div className="w-full max-w-sm">
 
         <div className="mb-6 text-center">
-          <p className="font-orbitron text-[10px] tracking-[0.4em] text-amber-600/70 uppercase mb-2">
-            Memory Day
-          </p>
+          <img
+            src="/prime-logo.png"
+            alt="Prime Bilingual School"
+            className="h-10 w-auto mx-auto mb-4 drop-shadow-sm"
+          />
           <h1 className="text-2xl font-bold text-slate-800">Redefinir senha</h1>
           <p className="text-slate-500 text-sm mt-1">
             Informe seu e-mail e escolha uma nova senha.
