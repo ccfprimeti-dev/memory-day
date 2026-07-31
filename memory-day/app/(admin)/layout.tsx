@@ -14,7 +14,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/admin" className="flex items-center gap-3">
-              <img src="/prime-escudo.png" alt="Prime Bilingual School" className="h-8 w-auto" />
+              <div className="h-8 w-9 overflow-hidden flex-shrink-0">
+                <img src="/prime-logo.png" alt="Prime Bilingual School" className="h-8 w-auto" />
+              </div>
               <div className="hidden sm:flex flex-col leading-none">
                 <span className="font-orbitron font-bold text-[11px] tracking-widest text-gradient-gold">
                   MEMORY DAY
