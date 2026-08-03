@@ -50,9 +50,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ erro: "Aluno não encontrado" }, { status: 404 });
   }
 
-  // Busca turma para obter nivelEnsino (necessário para ancoragem BNCC)
+  // Busca turma para nivelEnsino e nome da série (necessários para proporcionalidade BNCC)
   const turma = aluno.turmaId
-    ? await prisma.turma.findUnique({ where: { id: aluno.turmaId }, select: { nivelEnsino: true } })
+    ? await prisma.turma.findUnique({ where: { id: aluno.turmaId }, select: { nivelEnsino: true, nome: true } })
     : null;
   const nivelEnsino = turma?.nivelEnsino ?? "EM";
 
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   let habilidadeBncc: string | null = null;
   let justificativa:  string | null = null;
   try {
-    const analise = await analisarRegistroAluno(texto.trim(), materia.nome, nivelEnsino);
+    const analise = await analisarRegistroAluno(texto.trim(), materia.nome, nivelEnsino, turma?.nome ?? undefined);
     feedbackIA = analise.resumo;
     lacunasIA  = analise;
     const NIVEIS_VALIDOS = ["BASICO", "INTERMEDIARIO", "AVANCADO"] as const;

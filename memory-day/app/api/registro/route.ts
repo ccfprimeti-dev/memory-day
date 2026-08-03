@@ -106,11 +106,12 @@ export async function POST(req: NextRequest) {
   let habilidadeBncc: string | null = null;
   let justificativa:  string | null = null;
   try {
-    const nivelEnsino = (aluno?.turmaId
-      ? (await prisma.turma.findUnique({ where: { id: aluno.turmaId }, select: { nivelEnsino: true } }))?.nivelEnsino
-      : undefined) ?? "EM";
+    const turmaParaIA = aluno?.turmaId
+      ? await prisma.turma.findUnique({ where: { id: aluno.turmaId }, select: { nivelEnsino: true, nome: true } })
+      : undefined;
+    const nivelEnsino = turmaParaIA?.nivelEnsino ?? "EM";
 
-    const analise = await analisarRegistroAluno(texto.trim(), materia.nome, nivelEnsino);
+    const analise = await analisarRegistroAluno(texto.trim(), materia.nome, nivelEnsino, turmaParaIA?.nome ?? undefined);
     feedbackIA = analise.resumo;
     lacunasIA  = analise;
     const NIVEIS_VALIDOS = ["BASICO", "INTERMEDIARIO", "AVANCADO"] as const;

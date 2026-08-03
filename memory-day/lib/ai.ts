@@ -28,6 +28,34 @@ function labelNivelEnsino(nivelEnsino: string): string {
   return "Ensino Médio";
 }
 
+// Resolve "EF2 + 9º A" → "9º ano do Ensino Fundamental 2"
+// Sem nomeTurma cai no labelNivelEnsino genérico (sem regressão para registros antigos)
+function labelSerie(nivelEnsino: string, nomeTurma?: string): string {
+  if (nomeTurma) {
+    const num = nomeTurma.match(/^(\d+)/)?.[1];
+    if (num) {
+      if (nivelEnsino === "EM")  return `${num}º ano do Ensino Médio`;
+      if (nivelEnsino === "EF1") return `${num}º ano do Ensino Fundamental 1`;
+      return `${num}º ano do Ensino Fundamental 2`;
+    }
+  }
+  return labelNivelEnsino(nivelEnsino);
+}
+
+// Régua de profundidade calibrada à série — evita exigir do 6º ano o que se espera do 2º EM
+function profundidadeEsperada(nivelEnsino: string, nomeTurma?: string): string {
+  const num = nomeTurma ? (parseInt(nomeTurma.match(/^(\d+)/)?.[1] ?? "0") || 0) : 0;
+  if (nivelEnsino === "EM") {
+    if (num >= 3) return "domínio sólido dos conceitos + relações entre eles + análise crítica ou comparativa";
+    if (num >= 2) return "domínio conceitual + relações entre conceitos + algum raciocínio analítico";
+    return "definição correta + relações entre conceitos + exemplo ou aplicação prática";
+  }
+  if (num >= 9) return "definição + relação entre conceitos + exemplos aplicados ao cotidiano";
+  if (num >= 7) return "definição + pelo menos uma relação ou exemplo contextualizado";
+  // 6º ano (e fallback EF1/EF2 sem número)
+  return "definição simples + um exemplo ou relação básica — já é boa elaboração para essa série";
+}
+
 // Nivel derivado de nota_conteudo em CÓDIGO — a IA não decide mais o nível final
 function nivelDeNota(nota: number): NivelIA {
   if (nota >= 71) return "AVANCADO";
@@ -49,14 +77,16 @@ export async function analisarRegistroAluno(
   textoDoAluno: string,
   nomeMateria: string,
   nivelEnsino: string = "EM",
+  nomeTurma?: string,          // ex: "6º A", "2º B EM" — necessário para proporcionalidade por série
   habilidadesEsperadas?: string
 ): Promise<FeedbackIA> {
 
-  const labelNivel = labelNivelEnsino(nivelEnsino);
+  const serie      = labelSerie(nivelEnsino, nomeTurma);      // "6º ano do Fundamental 2"
+  const profDepth  = profundidadeEsperada(nivelEnsino, nomeTurma);
 
   const blocoBncc = habilidadesEsperadas
     ? `Habilidades BNCC desta aula: "${habilidadesEsperadas}". Use como gabarito exclusivo.`
-    : `Identifique as habilidades BNCC esperadas para "${nomeMateria}" no ${labelNivel}. Registre em "habilidade_bncc_considerada".`;
+    : `Identifique as habilidades BNCC esperadas para "${nomeMateria}" especificamente no ${serie} (use as competências do ${serie} na BNCC, não do nível inteiro). Registre em "habilidade_bncc_considerada".`;
 
   const resposta = await groq.chat.completions.create({
     model: MODELO,
@@ -65,39 +95,45 @@ export async function analisarRegistroAluno(
     messages: [
       {
         role: "system",
-        content: `Avaliador pedagógico de ${nomeMateria} — ${labelNivel} (BNCC). Você avalia O TEXTO DO ALUNO como evidência do aprendizado DELE — não avalia o tema, a aula nem o material didático. Responda SOMENTE em JSON válido.`,
+        content:
+`Você avalia diários de aula de alunos do ${serie}.
+CRITÉRIO CENTRAL: o aluno descreveu bem o que viveu e aprendeu na aula de hoje?
+PROPORCIONALIDADE POR SÉRIE: avalie o que é ESPERADO para um aluno do ${serie}. Ajuste o rigor exatamente a essa série — não exija de um 6º ano o que se espera de um 2º EM, e não seja leniente com um 2º EM aplicando critérios de anos anteriores. O mesmo texto deve receber nota MAIOR quando escrito por aluno de série menor (atende bem a expectativa da série) e nota MENOR para aluno de série maior (para a série dele, é raso).
+Responda SOMENTE em JSON válido.`,
       },
       {
         role: "user",
         content: `${blocoBncc}
 
-Texto do aluno:
+Texto do aluno (${serie}):
 """
 ${textoDoAluno}
 """
 
-AVISO CRÍTICO:
-- Afirmar que "aprendeu" ou "entendeu" NÃO é evidência de aprendizado.
-- Resenhar o material externo ("o documentário foi bom") também NÃO é evidência.
-- Apenas conteúdo específico e verificável conta: fatos, datas, nomes, conceitos explicados, exemplos, raciocínios com as palavras do aluno.
+CONTEXTO: Este é um diário de aula, não uma prova. Avalie a qualidade do registro considerando o que é esperado de um aluno do ${serie}. Não exija rigor acadêmico formal — exija que o aluno tenha descrito a aula com especificidade proporcional à sua série.
 
-PASSO 1 — OBRIGATÓRIO antes de qualquer nota:
-Liste em "evidencias_concretas" SOMENTE os fatos, datas, nomes, conceitos ou raciocínios específicos que o aluno EFETIVAMENTE escreveu. Afirmações genéricas não entram. Se não houver nada concreto, a lista fica vazia [].
-REGRA INVIOLÁVEL: se "evidencias_concretas" estiver vazia ou tiver apenas afirmações genéricas, as três notas de CONTEÚDO devem ser ≤ 20.
+RÉGUA CENTRAL (calibrada para o ${serie}):
+• Descreveu bem a aula → conteúdo ALTO (nomeou tópicos, conceitos, fórmulas, atividades ou exemplos específicos E elaborou minimamente, no nível esperado para o ${serie})
+• Descreveu parcialmente → conteúdo MÉDIO (nomeou tópicos mas explicou pouco, ou explicou bem mas cobriu pouca coisa)
+• Não descreveu ou foi vago → conteúdo BAIXO ("aprendi bastante", "foi boa aula" sem nada específico)
 
-PASSO 2 — Pontue com base no que está em "evidencias_concretas":
+PASSO 1 — OBRIGATÓRIO antes de pontuar:
+Liste em "evidencias_concretas" os elementos ESPECÍFICOS que o aluno mencionou: nomes de tópicos, conceitos, fórmulas, atividades, obras, autores, exemplos. Qualquer menção específica ao conteúdo da aula conta. Afirmações puramente genéricas não entram.
+REGRA INVIOLÁVEL: lista vazia → as três notas de CONTEÚDO devem ser ≤ 20.
 
-CONTEÚDO (use valores irregulares: 37, 63, 78 — nunca só múltiplos de 10):
-• correcao_conceitual: dos itens concretos listados, quantos estão factualmente corretos? Lista vazia → 0.
-• completude: quantos aspectos esperados pela BNCC foram cobertos pelos itens concretos? Lista vazia → 0.
-• profundidade: os itens concretos mostram raciocínio, exemplos ou relações além da definição? Lista vazia ou superficial → ≤ 15.
+PASSO 2 — Pontue (valores irregulares: ex. 37, 63, 78 — nunca só múltiplos de 10):
 
-ESCRITA (avalie a produção escrita independente do conteúdo):
+CONTEÚDO (avalie sempre em relação ao que é esperado do ${serie}):
+• correcao_conceitual: o que o aluno mencionou está correto no contexto da matéria? Lista vazia → 0. Erros graves → baixo. Correto e específico → alto.
+• completude: considerando o que o PRÓPRIO TEXTO sugere que foi a aula de hoje, o aluno cobriu bem? Lista vazia → 0. Cobriu pouco → baixo/médio. Cobriu bem a aula → alto.
+• profundidade: o aluno foi além de apenas listar tópicos? Para o ${serie}: ${profDepth}. Lista vazia → 0. Só listou nomes → baixo. Atingiu o esperado para a série → médio/alto. Superou o esperado → alto.
+
+ESCRITA (avalie independente do conteúdo):
 • clareza: texto compreensível? (0=confuso, 100=cristalino)
 • organizacao: sequência lógica? (0=caótico, 100=organizado)
 • articulacao: palavras próprias? (0=termos colados, 100=texto autoral)
 
-Escreva 1 frase de justificativa por subcritério.
+1 frase de justificativa por subcritério — mencione a série avaliada quando relevante.
 
 JSON (português do Brasil):
 {
@@ -142,8 +178,9 @@ JSON (português do Brasil):
   const aproveitamento = Math.round(nota_conteudo * PESO_CONTEUDO + nota_escrita * PESO_ESCRITA);
   const nivel          = nivelDeNota(nota_conteudo);
 
-  // Justificativa consolidada dos 6 subcritérios — usada para auditoria no PDF
+  // Justificativa consolidada — inclui a série para rastrear que a proporcionalidade foi aplicada
   const justificativa = [
+    `[Série: ${serie}]`,
     `Correção (${correcao}): ${raw.conteudo?.correcao_justificativa ?? ""}`,
     `Completude (${completude}): ${raw.conteudo?.completude_justificativa ?? ""}`,
     `Profundidade (${profund}): ${raw.conteudo?.profundidade_justificativa ?? ""}`,
