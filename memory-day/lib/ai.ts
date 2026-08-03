@@ -81,9 +81,9 @@ function profundidadeEsperada(pos: number): string {
            + "MÉDIO: explicou relações causais básicas. "
            + "ALTO: mostrou relações causais com algum raciocínio inferencial (ex: 'X causou Y porque...').";
     case 5: // 1º EM
-      return "BAIXO: descrição factual básica sem análise — mesmo que correta, listar causas/consequências sem analisá-las é profundidade BAIXA para o 1º EM. "
-           + "MÉDIO: relacionou causas e efeitos com alguma explicação. "
-           + "ALTO: analisou relações + trouxe raciocínio analítico inicial ou aplicação prática.";
+      return "BAIXO (0-35): descrição factual básica sem análise — mesmo que correta e completa, listar causas/consequências sem analisá-las é profundidade BAIXA para o 1º EM. "
+           + "MÉDIO (36-65): relacionou causas e efeitos com alguma explicação analítica explícita. "
+           + "ALTO (66-100): analisou relações + trouxe raciocínio analítico inicial ou aplicação prática.";
     case 6: // 2º EM
       return "BAIXO (0-35): qualquer descrição factual sem análise — listar causas e consequências corretamente ainda é BAIXO para o 2º EM, pois a série exige raciocínio analítico. "
            + "MÉDIO (36-65): analisou relações causais de forma explícita. "
