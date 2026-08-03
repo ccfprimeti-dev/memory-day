@@ -135,7 +135,7 @@ export async function analisarRegistroAluno(
   const resposta = await client.messages.create({
     model: MODELO,
     temperature: TEMPERATURE,
-    max_tokens: 1000,
+    max_tokens: 2048,
     system:
 `Você avalia diários de aula.
 CRITÉRIO CENTRAL: o aluno descreveu bem o que viveu e aprendeu na aula de hoje?
