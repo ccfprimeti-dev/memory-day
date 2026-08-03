@@ -11,11 +11,21 @@ const MODELO = "claude-haiku-4-5-20251001";
 const TEMPERATURE = 0.2;
 
 function extrairJSON(texto: string): string {
-  return texto
+  // Remove markdown fences
+  let limpo = texto
     .replace(/^```json\s*/i, "")
     .replace(/^```\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
+
+  // Extrai apenas o objeto JSON (entre o primeiro { e o último })
+  const inicio = limpo.indexOf("{");
+  const fim    = limpo.lastIndexOf("}");
+  if (inicio !== -1 && fim !== -1 && fim > inicio) {
+    limpo = limpo.slice(inicio, fim + 1);
+  }
+
+  return limpo;
 }
 
 // Pesos da nota final — ajuste aqui sem mexer no prompt
@@ -135,7 +145,7 @@ export async function analisarRegistroAluno(
   const resposta = await client.messages.create({
     model: MODELO,
     temperature: TEMPERATURE,
-    max_tokens: 2048,
+    max_tokens: 4096,
     system:
 `Você avalia diários de aula.
 CRITÉRIO CENTRAL: o aluno descreveu bem o que viveu e aprendeu na aula de hoje?
