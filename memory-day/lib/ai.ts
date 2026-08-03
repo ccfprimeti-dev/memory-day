@@ -1,10 +1,10 @@
-// Centraliza todas as chamadas de IA — usa Groq (gratuito)
-import Groq from "groq-sdk";
+// Centraliza todas as chamadas de IA — usa Anthropic Claude
+import Anthropic from "@anthropic-ai/sdk";
 import type { FeedbackIA, RelatorioIA, NivelIA } from "@/types";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const MODELO = "llama-3.3-70b-versatile";
+const MODELO = "claude-haiku-4-5-20251001";
 
 // Temperature 0.2: baixa o suficiente para respostas focadas e consistentes,
 // mas não zero — evita que textos idênticos travem em exatamente a mesma nota.
@@ -132,16 +132,11 @@ export async function analisarRegistroAluno(
     + `(use as habilidades da BNCC para o ${serie}, não do nível de ensino inteiro). `
     + `Registre em "habilidade_bncc_considerada".`;
 
-  const resposta = await groq.chat.completions.create({
+  const resposta = await client.messages.create({
     model: MODELO,
     temperature: TEMPERATURE,
     max_tokens: 1000,
-    messages: [
-      {
-        role: "system",
-        // Escala posicional explícita: a IA sabe que há 7 graus e onde o aluno está.
-        // Sem citar séries específicas como exemplos — evita ancoragem nos extremos.
-        content:
+    system:
 `Você avalia diários de aula.
 CRITÉRIO CENTRAL: o aluno descreveu bem o que viveu e aprendeu na aula de hoje?
 ESCALA DE EXIGÊNCIA (7 graus, crescente de rigor e profundidade):
@@ -149,7 +144,7 @@ ESCALA DE EXIGÊNCIA (7 graus, crescente de rigor e profundidade):
 Este aluno é do ${serie} — Grau ${pos} de 7.
 REGRA: calibre o rigor EXATAMENTE para o Grau ${pos}. A exigência deve ser maior que o Grau ${pos - 1} e menor que o Grau ${pos + 1}. O mesmo texto deve receber nota progressivamente menor conforme a série sobe — porque a expectativa da série sobe junto.
 Responda SOMENTE em JSON válido.`,
-      },
+    messages: [
       {
         role: "user",
         content:
@@ -207,7 +202,7 @@ JSON (português do Brasil):
     ],
   });
 
-  const textoResposta = resposta.choices[0]?.message?.content ?? "{}";
+  const textoResposta = resposta.content[0]?.type === "text" ? resposta.content[0].text : "{}";
   const raw = JSON.parse(extrairJSON(textoResposta));
 
   // ── CÁLCULO EM CÓDIGO — a IA fornece os subcritérios, o código calcula tudo ──
@@ -264,14 +259,11 @@ export async function gerarRelatorioTurma(
     .map((r, i) => `Aluno ${i + 1} (${r.nomeAluno}):\n${r.texto}`)
     .join("\n\n---\n\n");
 
-  const resposta = await groq.chat.completions.create({
+  const resposta = await client.messages.create({
     model: MODELO,
     max_tokens: 2048,
+    system: `Você é um assistente pedagógico. Analise registros de alunos e responda SEMPRE em JSON válido, sem texto antes ou depois.`,
     messages: [
-      {
-        role: "system",
-        content: `Você é um assistente pedagógico. Analise registros de alunos e responda SEMPRE em JSON válido, sem texto antes ou depois.`,
-      },
       {
         role: "user",
         content: `Analise os registros de ${registros.length} alunos (de ${totalAlunos} no total) na matéria de ${nomeMateria}:
@@ -294,6 +286,6 @@ Responda em português do Brasil.`,
     ],
   });
 
-  const texto = resposta.choices[0]?.message?.content ?? "{}";
+  const texto = resposta.content[0]?.type === "text" ? resposta.content[0].text : "{}";
   return JSON.parse(extrairJSON(texto)) as RelatorioIA;
 }
