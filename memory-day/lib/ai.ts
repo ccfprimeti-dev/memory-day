@@ -47,7 +47,8 @@ function sanitizarJSON(json: string): string {
   return resultado;
 }
 
-function parsearJSON(texto: string): unknown {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parsearJSON(texto: string): Record<string, any> {
   const extraido = extrairJSON(texto);
   try {
     return JSON.parse(extraido);
