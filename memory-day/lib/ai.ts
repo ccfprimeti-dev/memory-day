@@ -42,18 +42,59 @@ function labelSerie(nivelEnsino: string, nomeTurma?: string): string {
   return labelNivelEnsino(nivelEnsino);
 }
 
-// Régua de profundidade calibrada à série — evita exigir do 6º ano o que se espera do 2º EM
-function profundidadeEsperada(nivelEnsino: string, nomeTurma?: string): string {
+// Posição do aluno na escala de exigência crescente: 1 (6º ano) → 7 (3º EM).
+// Usada para ancoragem relativa no prompt — a IA sabe exatamente onde o aluno
+// está na progressão sem depender de referências fixas como "6º ano" ou "2º EM".
+function posicaoNaEscala(nivelEnsino: string, nomeTurma?: string): number {
   const num = nomeTurma ? (parseInt(nomeTurma.match(/^(\d+)/)?.[1] ?? "0") || 0) : 0;
   if (nivelEnsino === "EM") {
-    if (num >= 3) return "domínio sólido dos conceitos + relações entre eles + análise crítica ou comparativa";
-    if (num >= 2) return "domínio conceitual + relações entre conceitos + algum raciocínio analítico";
-    return "definição correta + relações entre conceitos + exemplo ou aplicação prática";
+    if (num >= 3) return 7;  // 3º EM
+    if (num >= 2) return 6;  // 2º EM
+    return 5;                 // 1º EM
   }
-  if (num >= 9) return "definição + relação entre conceitos + exemplos aplicados ao cotidiano";
-  if (num >= 7) return "definição + pelo menos uma relação ou exemplo contextualizado";
-  // 6º ano (e fallback EF1/EF2 sem número)
-  return "definição simples + um exemplo ou relação básica — já é boa elaboração para essa série";
+  // EF2: 6º→1, 7º→2, 8º→3, 9º→4
+  if (num >= 9) return 4;
+  if (num >= 8) return 3;
+  if (num >= 7) return 2;
+  return 1;  // 6º ano (padrão EF2 sem número)
+}
+
+// Régua de profundidade com âncoras LOW/MÉDIO/ALTO para cada grau.
+// Os âncoras negativos nos graus altos são essenciais: sem eles a IA trata
+// "descrição factual correta" como profundidade média mesmo no 3º EM.
+function profundidadeEsperada(pos: number): string {
+  switch (pos) {
+    case 1: // 6º ano
+      return "BAIXO: frases puramente genéricas sem nenhum conceito. "
+           + "MÉDIO: nomeou conceito mas não explicou. "
+           + "ALTO: definiu o conceito + deu um exemplo ou relação básica — isso já é excelente para o 6º ano.";
+    case 2: // 7º ano
+      return "BAIXO: só listou nomes de tópicos sem nenhuma explicação. "
+           + "MÉDIO: definiu conceitos mas não conectou entre si. "
+           + "ALTO: definiu + conectou pelo menos dois conceitos com algum exemplo.";
+    case 3: // 8º ano
+      return "BAIXO: listagem de fatos/causas sem nenhuma relação entre eles. "
+           + "MÉDIO: definiu e fez alguma relação parcial. "
+           + "ALTO: definiu + relacionou conceitos + trouxe exemplo contextualizado ao cotidiano.";
+    case 4: // 9º ano
+      return "BAIXO: lista de causas/fatos sem analisar por que ou como se relacionam. "
+           + "MÉDIO: explicou relações causais básicas. "
+           + "ALTO: mostrou relações causais com algum raciocínio inferencial (ex: 'X causou Y porque...').";
+    case 5: // 1º EM
+      return "BAIXO: descrição factual básica sem análise — mesmo que correta, listar causas/consequências sem analisá-las é profundidade BAIXA para o 1º EM. "
+           + "MÉDIO: relacionou causas e efeitos com alguma explicação. "
+           + "ALTO: analisou relações + trouxe raciocínio analítico inicial ou aplicação prática.";
+    case 6: // 2º EM
+      return "BAIXO (0-35): qualquer descrição factual sem análise — listar causas e consequências corretamente ainda é BAIXO para o 2º EM, pois a série exige raciocínio analítico. "
+           + "MÉDIO (36-65): analisou relações causais de forma explícita. "
+           + "ALTO (66-100): raciocínio analítico claro, relações multifatoriais, alguma perspectiva crítica.";
+    case 7: // 3º EM
+      return "BAIXO (0-25): descrição factual — mesmo completa e correta, é profundidade MUITO BAIXA para o 3º EM. "
+           + "MÉDIO (26-60): análise presente mas sem perspectiva crítica ou comparativa. "
+           + "ALTO (61-100): análise crítica aprofundada + perspectiva comparativa ou historiográfica + síntese conceitual.";
+    default:
+      return "definição correta + relação entre conceitos + exemplo ou aplicação";
+  }
 }
 
 // Nivel derivado de nota_conteudo em CÓDIGO — a IA não decide mais o nível final
@@ -81,12 +122,15 @@ export async function analisarRegistroAluno(
   habilidadesEsperadas?: string
 ): Promise<FeedbackIA> {
 
-  const serie      = labelSerie(nivelEnsino, nomeTurma);      // "6º ano do Fundamental 2"
-  const profDepth  = profundidadeEsperada(nivelEnsino, nomeTurma);
+  const serie     = labelSerie(nivelEnsino, nomeTurma);   // ex: "7º ano do Ensino Fundamental 2"
+  const pos       = posicaoNaEscala(nivelEnsino, nomeTurma); // 1 (6º ano) a 7 (3º EM)
+  const profDepth = profundidadeEsperada(pos);
 
   const blocoBncc = habilidadesEsperadas
     ? `Habilidades BNCC desta aula: "${habilidadesEsperadas}". Use como gabarito exclusivo.`
-    : `Identifique as habilidades BNCC esperadas para "${nomeMateria}" especificamente no ${serie} (use as competências do ${serie} na BNCC, não do nível inteiro). Registre em "habilidade_bncc_considerada".`;
+    : `Identifique as habilidades BNCC esperadas para "${nomeMateria}" especificamente no ${serie} `
+    + `(use as habilidades da BNCC para o ${serie}, não do nível de ensino inteiro). `
+    + `Registre em "habilidade_bncc_considerada".`;
 
   const resposta = await groq.chat.completions.create({
     model: MODELO,
@@ -95,45 +139,51 @@ export async function analisarRegistroAluno(
     messages: [
       {
         role: "system",
+        // Escala posicional explícita: a IA sabe que há 7 graus e onde o aluno está.
+        // Sem citar séries específicas como exemplos — evita ancoragem nos extremos.
         content:
-`Você avalia diários de aula de alunos do ${serie}.
+`Você avalia diários de aula.
 CRITÉRIO CENTRAL: o aluno descreveu bem o que viveu e aprendeu na aula de hoje?
-PROPORCIONALIDADE POR SÉRIE: avalie o que é ESPERADO para um aluno do ${serie}. Ajuste o rigor exatamente a essa série — não exija de um 6º ano o que se espera de um 2º EM, e não seja leniente com um 2º EM aplicando critérios de anos anteriores. O mesmo texto deve receber nota MAIOR quando escrito por aluno de série menor (atende bem a expectativa da série) e nota MENOR para aluno de série maior (para a série dele, é raso).
+ESCALA DE EXIGÊNCIA (7 graus, crescente de rigor e profundidade):
+  Grau 1: 6º ano EF → Grau 2: 7º ano EF → Grau 3: 8º ano EF → Grau 4: 9º ano EF → Grau 5: 1º EM → Grau 6: 2º EM → Grau 7: 3º EM
+Este aluno é do ${serie} — Grau ${pos} de 7.
+REGRA: calibre o rigor EXATAMENTE para o Grau ${pos}. A exigência deve ser maior que o Grau ${pos - 1} e menor que o Grau ${pos + 1}. O mesmo texto deve receber nota progressivamente menor conforme a série sobe — porque a expectativa da série sobe junto.
 Responda SOMENTE em JSON válido.`,
       },
       {
         role: "user",
-        content: `${blocoBncc}
+        content:
+`${blocoBncc}
 
-Texto do aluno (${serie}):
+Texto do aluno (${serie} — Grau ${pos}/7 na escala de exigência):
 """
 ${textoDoAluno}
 """
 
-CONTEXTO: Este é um diário de aula, não uma prova. Avalie a qualidade do registro considerando o que é esperado de um aluno do ${serie}. Não exija rigor acadêmico formal — exija que o aluno tenha descrito a aula com especificidade proporcional à sua série.
+CONTEXTO: Diário de aula — o aluno registrou o que viveu e aprendeu hoje. Avalie a qualidade desse registro considerando o que é esperado de um aluno do Grau ${pos}/7 (${serie}). Não exija rigor acadêmico formal — exija especificidade proporcional ao Grau ${pos}.
 
-RÉGUA CENTRAL (calibrada para o ${serie}):
-• Descreveu bem a aula → conteúdo ALTO (nomeou tópicos, conceitos, fórmulas, atividades ou exemplos específicos E elaborou minimamente, no nível esperado para o ${serie})
-• Descreveu parcialmente → conteúdo MÉDIO (nomeou tópicos mas explicou pouco, ou explicou bem mas cobriu pouca coisa)
-• Não descreveu ou foi vago → conteúdo BAIXO ("aprendi bastante", "foi boa aula" sem nada específico)
+RÉGUA CENTRAL (aplicada ao Grau ${pos} — ${serie}):
+• Descreveu bem a aula para o Grau ${pos} → conteúdo ALTO
+• Descreveu parcialmente → conteúdo MÉDIO
+• Vago ou genérico ("aprendi bastante", "foi interessante") → conteúdo BAIXO
 
 PASSO 1 — OBRIGATÓRIO antes de pontuar:
-Liste em "evidencias_concretas" os elementos ESPECÍFICOS que o aluno mencionou: nomes de tópicos, conceitos, fórmulas, atividades, obras, autores, exemplos. Qualquer menção específica ao conteúdo da aula conta. Afirmações puramente genéricas não entram.
+Liste em "evidencias_concretas" os elementos ESPECÍFICOS mencionados: tópicos, conceitos, fórmulas, atividades, obras, autores, exemplos concretos. Afirmações puramente genéricas não entram.
 REGRA INVIOLÁVEL: lista vazia → as três notas de CONTEÚDO devem ser ≤ 20.
 
-PASSO 2 — Pontue (valores irregulares: ex. 37, 63, 78 — nunca só múltiplos de 10):
+PASSO 2 — Pontue com valores irregulares (ex: 37, 63, 78 — nunca só múltiplos de 10):
 
-CONTEÚDO (avalie sempre em relação ao que é esperado do ${serie}):
-• correcao_conceitual: o que o aluno mencionou está correto no contexto da matéria? Lista vazia → 0. Erros graves → baixo. Correto e específico → alto.
-• completude: considerando o que o PRÓPRIO TEXTO sugere que foi a aula de hoje, o aluno cobriu bem? Lista vazia → 0. Cobriu pouco → baixo/médio. Cobriu bem a aula → alto.
-• profundidade: o aluno foi além de apenas listar tópicos? Para o ${serie}: ${profDepth}. Lista vazia → 0. Só listou nomes → baixo. Atingiu o esperado para a série → médio/alto. Superou o esperado → alto.
+CONTEÚDO (avalie em relação ao esperado para o Grau ${pos} — ${serie}):
+• correcao_conceitual: o que mencionou está correto no contexto da matéria? Lista vazia → 0. Erros graves → baixo. Correto e específico → alto.
+• completude: o aluno cobriu bem o que o texto sugere que foi a aula? Lembre: uma aula de Grau ${pos} sobre qualquer tema costuma abordar o conteúdo com profundidade e abrangência proporcionais ao Grau ${pos}. Um texto que só cobre aspectos introdutórios — típicos de séries muito mais jovens — representa completude BAIXA para o Grau ${pos}, mesmo que correto. Lista vazia → 0. Cobriu só o básico introdutório para a série → baixo. Cobriu de forma proporcional ao Grau ${pos} → médio/alto.
+• profundidade: Âncoras para o Grau ${pos} (${serie}): ${profDepth} Lista vazia → 0.
 
-ESCRITA (avalie independente do conteúdo):
+ESCRITA (independente do conteúdo):
 • clareza: texto compreensível? (0=confuso, 100=cristalino)
 • organizacao: sequência lógica? (0=caótico, 100=organizado)
-• articulacao: palavras próprias? (0=termos colados, 100=texto autoral)
+• articulacao: palavras próprias? (0=colagem de termos, 100=texto autoral)
 
-1 frase de justificativa por subcritério — mencione a série avaliada quando relevante.
+1 frase de justificativa por subcritério — cite o Grau ${pos} (${serie}) para rastreabilidade.
 
 JSON (português do Brasil):
 {

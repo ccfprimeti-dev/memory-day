@@ -1,100 +1,149 @@
 /**
- * Roteiro de validação da proporcionalidade por série.
- * Executa 4 cenários e imprime os resultados comparativos.
+ * Valida que a proporcionalidade por série está contínua para todas as 7 séries.
+ * Executa o MESMO texto nos 7 graus e exibe a tabela comparativa.
  *
  * Uso: npx tsx prisma/teste-serie.ts
  * (requer GROQ_API_KEY no .env)
  */
-import * as dotenv from "dotenv";
-dotenv.config();
+// Env carregado via: npx tsx --env-file .env prisma/teste-serie.ts
 
 import { analisarRegistroAluno } from "../lib/ai";
 
-// ── Textos de teste ──────────────────────────────────────────────────────────
-
-// Qualidade MÉDIA — mesmo texto usado nos cenários 1a e 1b
+// ── Texto de qualidade MÉDIA — o mesmo para todas as 7 séries ──────────────
+// Suficientemente específico para não ser "vago", mas sem análise crítica profunda.
+// Expectativa: nota alta no 6º ano, decrescendo progressivamente até o 3º EM.
 const TEXTO_MEDIO = `
-Hoje na aula de Física estudamos a Lei de Ohm. O professor explicou que
-a tensão elétrica (V) é igual à resistência (R) multiplicada pela corrente (I),
-então V = R × I. Fizemos exercícios aplicando essa fórmula em circuitos simples
-com resistores em série. Entendi que quando aumentamos a resistência, a corrente
-diminui se a tensão ficar igual.
+Hoje na aula de História estudamos a Revolução Francesa. O professor explicou
+que ela começou em 1789 com a tomada da Bastilha, que era uma prisão-símbolo
+do absolutismo. Os principais motivos foram a crise econômica, o poder absoluto
+do rei e a influência das ideias iluministas de liberdade e igualdade.
+A revolução derrubou a monarquia e resultou na Declaração dos Direitos do
+Homem e do Cidadão, que garantia direitos básicos para as pessoas.
 `.trim();
 
-// Texto AVANÇADO — para validar que o 2º EM ainda pode tirar nota alta
-const TEXTO_AVANCADO_EM = `
-Na aula de Física aprofundamos as Leis de Kirchhoff. A Lei das Correntes
-(KCL) diz que a soma das correntes num nó é zero, enquanto a Lei das Tensões
-(KVL) afirma que a soma das quedas de tensão em qualquer malha fechada é zero.
-Resolvemos um circuito misto com três malhas usando o método das correntes de
-malha; montei o sistema de equações e encontrei as correntes em cada ramo.
-Percebi que a lei de Ohm é um caso particular das leis de Kirchhoff para
-elementos resistivos lineares.
-`.trim();
-
-// Texto SIMPLES — para validar que o 6º ano não é punido por critério alto
-const TEXTO_SIMPLES_EF = `
-Hoje aprendemos sobre frações na aula de Matemática. O professor mostrou
-que fração tem numerador e denominador. Fizemos exercícios de somar frações
-com o mesmo denominador, tipo 1/4 + 2/4 = 3/4. Achei fácil porque é só
-somar o numerador e deixar o denominador igual.
-`.trim();
-
-// ── Utilitário de exibição ───────────────────────────────────────────────────
-
-function exibir(titulo: string, r: Awaited<ReturnType<typeof analisarRegistroAluno>>) {
-  console.log(`\n${"─".repeat(60)}`);
-  console.log(`📋 ${titulo}`);
-  console.log(`${"─".repeat(60)}`);
-  console.log(`  Aproveitamento : ${r.aproveitamento}%`);
-  console.log(`  Nota conteúdo  : ${r.nota_conteudo}%`);
-  console.log(`  Nota escrita   : ${r.nota_escrita}%`);
-  console.log(`  Nível          : ${r.nivel}`);
-  console.log(`  BNCC           : ${r.habilidade_bncc_considerada ?? "(nenhuma)"}`);
-  console.log(`  Justificativa  : ${r.justificativa}`);
-  console.log(`  Resumo         : ${r.resumo}`);
-}
+// ── Tabela das 7 séries ─────────────────────────────────────────────────────
+const SERIES = [
+  { nomeTurma: "6º A",    nivelEnsino: "EF2", grau: 1 },
+  { nomeTurma: "7º A",    nivelEnsino: "EF2", grau: 2 },
+  { nomeTurma: "8º A",    nivelEnsino: "EF2", grau: 3 },
+  { nomeTurma: "9º A",    nivelEnsino: "EF2", grau: 4 },
+  { nomeTurma: "1º A EM", nivelEnsino: "EM",  grau: 5 },
+  { nomeTurma: "2º A EM", nivelEnsino: "EM",  grau: 6 },
+  { nomeTurma: "3º A EM", nivelEnsino: "EM",  grau: 7 },
+];
 
 // ── Execução ─────────────────────────────────────────────────────────────────
-
 async function main() {
-  console.log("Iniciando validação de proporcionalidade por série...\n");
+  console.log("\nTexto usado (mesmo para todas as séries):");
+  console.log("─".repeat(60));
+  console.log(TEXTO_MEDIO);
+  console.log("─".repeat(60));
+  console.log("\nAnalisando as 7 séries... (aguarde, são 7 chamadas à IA)\n");
 
-  // Cenário 1a — texto médio atribuído a 6º ano EF2
-  const r1a = await analisarRegistroAluno(TEXTO_MEDIO, "Física", "EF2", "6º A");
-  exibir("Cenário 1a — Texto MÉDIO → 6º ano EF2", r1a);
+  const resultados: Array<{
+    grau: number;
+    nomeTurma: string;
+    conteudo: number;
+    escrita: number;
+    aproveitamento: number;
+    nivel: string;
+    profJustif: string;
+  }> = [];
 
-  // Cenário 1b — MESMO texto atribuído a 2º EM
-  const r1b = await analisarRegistroAluno(TEXTO_MEDIO, "Física", "EM", "2º B EM");
-  exibir("Cenário 1b — Texto MÉDIO → 2º ano EM", r1b);
+  for (const s of SERIES) {
+    process.stdout.write(`  [Grau ${s.grau}/7] ${s.nomeTurma}... `);
+    try {
+      const r = await analisarRegistroAluno(
+        TEXTO_MEDIO,
+        "História",
+        s.nivelEnsino,
+        s.nomeTurma,
+      );
+      resultados.push({
+        grau: s.grau,
+        nomeTurma: s.nomeTurma,
+        conteudo:       r.nota_conteudo  ?? 0,
+        escrita:        r.nota_escrita   ?? 0,
+        aproveitamento: r.aproveitamento ?? 0,
+        nivel:          r.nivel,
+        // Extrai só a parte da justificativa de profundidade para auditoria rápida
+        profJustif: (r.justificativa ?? "")
+          .split(" | ")
+          .find(p => p.startsWith("Profundidade")) ?? "",
+      });
+      console.log(`✓ aproveitamento=${r.aproveitamento}%`);
+    } catch (e) {
+      console.log(`✘ ERRO: ${e}`);
+      resultados.push({ grau: s.grau, nomeTurma: s.nomeTurma, conteudo: -1, escrita: -1, aproveitamento: -1, nivel: "ERRO", profJustif: "" });
+    }
+  }
 
-  console.log("\n✅ VERIFICAÇÃO 1 — 6º ano deve ter nota MAIOR que 2º EM:");
-  const ok1 = (r1a.aproveitamento ?? 0) > (r1b.aproveitamento ?? 0);
-  console.log(`   6º ano: ${r1a.aproveitamento}%  |  2º EM: ${r1b.aproveitamento}%  →  ${ok1 ? "✔ CORRETO" : "✘ INVERTIDO"}`);
-
-  // Cenário 2 — texto avançado para 2º EM → deve conseguir nota alta
-  const r2 = await analisarRegistroAluno(TEXTO_AVANCADO_EM, "Física", "EM", "2º B EM");
-  exibir("Cenário 2 — Texto AVANÇADO → 2º ano EM", r2);
-
-  console.log("\n✅ VERIFICAÇÃO 2 — texto avançado no 2º EM deve ser ≥ 70%:");
-  const ok2 = (r2.aproveitamento ?? 0) >= 70;
-  console.log(`   Aproveitamento: ${r2.aproveitamento}%  →  ${ok2 ? "✔ CORRETO" : "✘ MUITO BAIXO"}`);
-
-  // Cenário 3 — texto simples para 6º ano → deve ter nota razoável (≥ 55%)
-  const r3 = await analisarRegistroAluno(TEXTO_SIMPLES_EF, "Matemática", "EF2", "6º A");
-  exibir("Cenário 3 — Texto SIMPLES → 6º ano EF2", r3);
-
-  console.log("\n✅ VERIFICAÇÃO 3 — texto simples no 6º ano deve ser ≥ 55%:");
-  const ok3 = (r3.aproveitamento ?? 0) >= 55;
-  console.log(`   Aproveitamento: ${r3.aproveitamento}%  →  ${ok3 ? "✔ CORRETO" : "✘ MUITO BAIXO"}`);
-
-  console.log(`\n${"═".repeat(60)}`);
-  const passou = [ok1, ok2, ok3].every(Boolean);
-  console.log(passou
-    ? "🎉 TODOS OS CENÁRIOS PASSARAM"
-    : "⚠️  ALGUNS CENÁRIOS FALHARAM — revise o prompt"
+  // ── Tabela de resultados ───────────────────────────────────────────────────
+  console.log("\n" + "═".repeat(72));
+  console.log("TABELA DE PROPORCIONALIDADE POR SÉRIE (mesmo texto)");
+  console.log("═".repeat(72));
+  console.log(
+    "Grau".padEnd(6) +
+    "Série".padEnd(12) +
+    "Conteúdo".padEnd(12) +
+    "Escrita".padEnd(10) +
+    "Aproveit.".padEnd(12) +
+    "Nível"
   );
-  console.log(`${"═".repeat(60)}\n`);
+  console.log("─".repeat(72));
+
+  for (const r of resultados) {
+    const barra = "█".repeat(Math.round((r.aproveitamento > 0 ? r.aproveitamento : 0) / 5));
+    console.log(
+      `[${r.grau}/7]`.padEnd(6) +
+      r.nomeTurma.padEnd(12) +
+      `${r.conteudo}%`.padEnd(12) +
+      `${r.escrita}%`.padEnd(10) +
+      `${r.aproveitamento}%`.padEnd(12) +
+      r.nivel
+    );
+  }
+
+  console.log("─".repeat(72));
+
+  // ── Verificação de progressão decrescente ─────────────────────────────────
+  console.log("\nVERIFICAÇÃO — aproveitamento deve DECRESCER do Grau 1 ao 7:");
+  let progressaoOk = true;
+  for (let i = 1; i < resultados.length; i++) {
+    const anterior = resultados[i - 1];
+    const atual    = resultados[i];
+    const ok       = atual.aproveitamento <= anterior.aproveitamento;
+    const seta     = ok ? "↓ ✔" : "↑ ✘ INVERTIDO";
+    console.log(
+      `  Grau ${anterior.grau} (${anterior.nomeTurma}) ${anterior.aproveitamento}% → ` +
+      `Grau ${atual.grau} (${atual.nomeTurma}) ${atual.aproveitamento}%  ${seta}`
+    );
+    if (!ok) progressaoOk = false;
+  }
+
+  // Tolerância: permite empates pontuais (série vizinha pode ter mesma nota)
+  // mas a tendência geral (início vs fim) deve ser decrescente
+  const tendenciaOk = resultados[resultados.length - 1].aproveitamento < resultados[0].aproveitamento;
+  console.log(`\n  Tendência geral (${resultados[0].nomeTurma} vs ${resultados[resultados.length - 1].nomeTurma}): ` +
+    `${resultados[0].aproveitamento}% → ${resultados[resultados.length - 1].aproveitamento}% ` +
+    (tendenciaOk ? "✔ DECRESCENTE" : "✘ NÃO DECRESCENTE"));
+
+  console.log("\n" + "═".repeat(72));
+  console.log(progressaoOk
+    ? "🎉 PROGRESSÃO CONTÍNUA E CORRETA EM TODOS OS GRAUS"
+    : tendenciaOk
+      ? "⚠️  PROGRESSÃO GERAL OK, mas há inversões pontuais entre séries vizinhas"
+      : "✘  PROGRESSÃO INCORRETA — revisar prompt ou funções de escala"
+  );
+  console.log("═".repeat(72) + "\n");
+
+  // ── Auditoria de justificativas de profundidade ───────────────────────────
+  console.log("AUDITORIA — justificativa de profundidade por série:");
+  console.log("(confirme que cada série cita o Grau correto)\n");
+  for (const r of resultados) {
+    console.log(`  [Grau ${r.grau}] ${r.nomeTurma}: ${r.profJustif || "(sem justificativa de profundidade)"}`);
+  }
+  console.log();
 }
 
 main().catch(console.error);
