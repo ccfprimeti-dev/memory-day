@@ -28,6 +28,35 @@ function extrairJSON(texto: string): string {
   return limpo;
 }
 
+// Corrige quebras de linha e retornos literais dentro de strings JSON
+// — o Haiku às vezes os emite sem escapar, quebrando o JSON.parse
+function sanitizarJSON(json: string): string {
+  let resultado = "";
+  let dentroString = false;
+  let escapando    = false;
+
+  for (let i = 0; i < json.length; i++) {
+    const ch = json[i];
+    if (escapando)          { resultado += ch; escapando = false; continue; }
+    if (ch === "\\")        { resultado += ch; escapando = true;  continue; }
+    if (ch === '"')         { dentroString = !dentroString; resultado += ch; continue; }
+    if (dentroString && ch === "\n") { resultado += "\\n"; continue; }
+    if (dentroString && ch === "\r") { continue; }
+    resultado += ch;
+  }
+  return resultado;
+}
+
+function parsearJSON(texto: string): unknown {
+  const extraido = extrairJSON(texto);
+  try {
+    return JSON.parse(extraido);
+  } catch {
+    // Segunda tentativa: escapar quebras de linha literais dentro de strings
+    return JSON.parse(sanitizarJSON(extraido));
+  }
+}
+
 // Pesos da nota final — ajuste aqui sem mexer no prompt
 const PESO_CONTEUDO = 0.7;
 const PESO_ESCRITA  = 0.3;
@@ -211,7 +240,7 @@ JSON (português do Brasil):
   });
 
   const textoResposta = resposta.content[0]?.type === "text" ? resposta.content[0].text : "{}";
-  const raw = JSON.parse(extrairJSON(textoResposta));
+  const raw = parsearJSON(textoResposta);
 
   // ── CÁLCULO EM CÓDIGO — a IA fornece os subcritérios, o código calcula tudo ──
   // Trava de conteúdo: se a IA não encontrou evidências concretas, cap em 20.
@@ -295,5 +324,5 @@ Responda em português do Brasil.`,
   });
 
   const texto = resposta.content[0]?.type === "text" ? resposta.content[0].text : "{}";
-  return JSON.parse(extrairJSON(texto)) as RelatorioIA;
+  return parsearJSON(texto) as RelatorioIA;
 }
