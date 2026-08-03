@@ -188,20 +188,18 @@ ESCRITA (independente do conteúdo):
 • organizacao: sequência lógica? (0=caótico, 100=organizado)
 • articulacao: palavras próprias? (0=colagem de termos, 100=texto autoral)
 
-1 frase de justificativa por subcritério — cite o Grau ${pos} (${serie}) para rastreabilidade.
-
 JSON (português do Brasil):
 {
   "evidencias_concretas": ["..."],
   "conteudo": {
-    "correcao_conceitual": N, "correcao_justificativa": "...",
-    "completude": N, "completude_justificativa": "...",
-    "profundidade": N, "profundidade_justificativa": "..."
+    "correcao_conceitual": N,
+    "completude": N,
+    "profundidade": N
   },
   "escrita": {
-    "clareza": N, "clareza_justificativa": "...",
-    "organizacao": N, "organizacao_justificativa": "...",
-    "articulacao": N, "articulacao_justificativa": "..."
+    "clareza": N,
+    "organizacao": N,
+    "articulacao": N
   },
   "habilidade_bncc_considerada": "...",
   "resumo": "2-3 frases",
