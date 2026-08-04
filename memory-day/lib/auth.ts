@@ -3,18 +3,31 @@ import { getIronSession, IronSession, SessionOptions } from "iron-session";
 import { cookies } from "next/headers";
 import type { SessaoUsuario } from "@/types";
 
-// Configuração da sessão
-export const sessionOptions: SessionOptions = {
-  password: process.env.SESSION_SECRET as string,
-  cookieName: "memory-day-session",
-  cookieOptions: {
-    // Em produção, sempre use HTTPS
-    secure: process.env.NODE_ENV === "production",
-    httpOnly: true,
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 7, // 7 dias
-  },
+const BASE_COOKIE = {
+  secure:   process.env.NODE_ENV === "production",
+  httpOnly: true,
+  sameSite: "lax" as const,
 };
+
+// Opções para leitura (maxAge só importa no momento em que o cookie é gravado)
+export const sessionOptions: SessionOptions = {
+  password:      process.env.SESSION_SECRET as string,
+  cookieName:    "memory-day-session",
+  cookieOptions: { ...BASE_COOKIE, maxAge: 60 * 60 * 24 * 30 },
+};
+
+// Opções usadas no login — escolhe duração conforme "manter login"
+export function sessionOptionsLogin(lembrarMe: boolean): SessionOptions {
+  return {
+    password:      process.env.SESSION_SECRET as string,
+    cookieName:    "memory-day-session",
+    cookieOptions: {
+      ...BASE_COOKIE,
+      // lembrarMe=true → 30 dias; false → sem maxAge (session cookie, some ao fechar o navegador)
+      ...(lembrarMe ? { maxAge: 60 * 60 * 24 * 30 } : {}),
+    },
+  };
+}
 
 // Tipagem da sessão para o iron-session
 declare module "iron-session" {

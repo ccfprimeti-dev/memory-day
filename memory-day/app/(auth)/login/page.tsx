@@ -8,6 +8,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [lembrarMe, setLembrarMe] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
 
@@ -19,17 +20,17 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, senha }),
+        body: JSON.stringify({ email, senha, lembrarMe }),
       });
       const dados = await res.json();
-      if (!res.ok) { setErro(dados.erro ?? "Credenciais inválidas."); return; }
+      if (!res.ok) { setErro(dados.erro ?? "Invalid credentials."); return; }
       const destino =
         dados.papel === "ALUNO"  ? "/aluno/dashboard" :
         dados.papel === "ADMIN"  ? "/admin" :
         "/professor/dashboard";
       router.push(destino);
     } catch {
-      setErro("Falha na conexão.");
+      setErro("Connection failed.");
     } finally {
       setCarregando(false);
     }
@@ -73,7 +74,7 @@ export default function LoginPage() {
             WebkitTextFillColor: "transparent",
             backgroundClip: "text",
           }}>
-          Aprenda · Registre · Evolua
+          Learn · Record · Grow
         </p>
       </div>
 
@@ -89,7 +90,7 @@ export default function LoginPage() {
             <div className="flex items-center gap-2 mb-6">
               <div className="w-1 h-5 rounded-full bg-gradient-to-b from-slate-800 to-amber-500" />
               <p className="font-orbitron text-xs tracking-[0.3em] text-slate-500 uppercase">
-                Acesso à plataforma
+                Platform access
               </p>
             </div>
 
@@ -97,7 +98,7 @@ export default function LoginPage() {
               {/* Email */}
               <div>
                 <label className="block text-[10px] font-orbitron tracking-[0.3em] text-slate-500 uppercase mb-1.5">
-                  E-mail
+                  Email
                 </label>
                 <input
                   type="email" value={email} onChange={(e) => setEmail(e.target.value)}
@@ -111,7 +112,7 @@ export default function LoginPage() {
               {/* Senha */}
               <div>
                 <label className="block text-[10px] font-orbitron tracking-[0.3em] text-slate-500 uppercase mb-1.5">
-                  Senha
+                  Password
                 </label>
                 <input
                   type="password" value={senha} onChange={(e) => setSenha(e.target.value)}
@@ -121,6 +122,19 @@ export default function LoginPage() {
                     transition-all duration-200"
                 />
               </div>
+
+              {/* Manter login */}
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={lembrarMe}
+                  onChange={e => setLembrarMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 accent-amber-500 cursor-pointer"
+                />
+                <span className="text-xs text-slate-500 font-orbitron tracking-wide">
+                  Keep me signed in for 30 days
+                </span>
+              </label>
 
               {erro && (
                 <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-xs text-red-600">
@@ -137,8 +151,8 @@ export default function LoginPage() {
                   flex items-center justify-center gap-2"
               >
                 {carregando
-                  ? <><svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Autenticando...</>
-                  : "Iniciar Sessão ›"}
+                  ? <><svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Authenticating...</>
+                  : "Sign In ›"}
               </button>
             </form>
 
@@ -146,7 +160,7 @@ export default function LoginPage() {
             <div className="mt-5 pt-4 border-t border-slate-100 text-center">
               <Link href="/esqueci-senha"
                 className="text-[11px] text-slate-400 hover:text-amber-600 transition font-orbitron tracking-wide">
-                Esqueci minha senha
+                Forgot my password
               </Link>
             </div>
         </div>
@@ -154,9 +168,9 @@ export default function LoginPage() {
 
       {/* Link cadastro */}
       <p className="mt-6 text-xs text-slate-600">
-        Não tem conta?{" "}
+        Don&apos;t have an account?{" "}
         <Link href="/cadastro" className="text-amber-600 hover:text-amber-500 font-orbitron tracking-wide transition">
-          Criar conta
+          Create account
         </Link>
       </p>
 

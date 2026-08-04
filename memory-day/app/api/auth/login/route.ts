@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { getIronSession } from "iron-session";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { getSessao } from "@/lib/auth";
+import { sessionOptionsLogin } from "@/lib/auth";
+import type { SessaoUsuario } from "@/types";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, senha } = await req.json();
+    const { email, senha, lembrarMe } = await req.json() as {
+      email?: string; senha?: string; lembrarMe?: boolean;
+    };
 
     if (!email || !senha) {
       return NextResponse.json({ erro: "Email e senha são obrigatórios" }, { status: 400 });
@@ -22,8 +27,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ erro: "Credenciais inválidas" }, { status: 401 });
     }
 
-    // Grava a sessão no cookie (turmaId para alunos, null para professores)
-    const sessao = await getSessao();
+    // Grava a sessão com duração correta: 30 dias se lembrarMe, session cookie se não
+    const cookieStore = await cookies();
+    const sessao = await getIronSession<{ usuario?: SessaoUsuario }>(cookieStore, sessionOptionsLogin(!!lembrarMe));
     sessao.usuario = {
       id:      usuario.id,
       nome:    usuario.nome,
