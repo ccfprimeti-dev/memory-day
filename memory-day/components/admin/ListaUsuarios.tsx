@@ -28,11 +28,32 @@ function corPapel(p: string) {
 }
 
 export function ListaUsuarios({ usuarios }: Props) {
-  const [modal,   setModal]   = useState<{ userId: string; nome: string } | null>(null);
-  const [sucesso, setSucesso] = useState<string | null>(null);
-  const [busca,   setBusca]   = useState("");
+  const [modal,          setModal]          = useState<{ userId: string; nome: string } | null>(null);
+  const [confirmDelete,  setConfirmDelete]  = useState<{ userId: string; nome: string } | null>(null);
+  const [removendo,      setRemovendo]      = useState(false);
+  const [lista,          setLista]          = useState(usuarios);
+  const [sucesso,        setSucesso]        = useState<string | null>(null);
+  const [erro,           setErro]           = useState<string | null>(null);
+  const [busca,          setBusca]          = useState("");
 
-  const filtrados = usuarios.filter(u =>
+  async function handleRemover(userId: string, nome: string) {
+    setRemovendo(true);
+    setErro(null);
+    try {
+      const res = await fetch(`/api/admin/usuarios/${userId}`, { method: "DELETE" });
+      const d   = await res.json();
+      if (!res.ok) { setErro(d.erro ?? "Erro ao remover usuário."); return; }
+      setLista(prev => prev.filter(u => u.id !== userId));
+      setSucesso(`${nome} removido com sucesso.`);
+      setConfirmDelete(null);
+    } catch {
+      setErro("Falha na conexão.");
+    } finally {
+      setRemovendo(false);
+    }
+  }
+
+  const filtrados = lista.filter(u =>
     u.nome.toLowerCase().includes(busca.toLowerCase()) ||
     u.email.toLowerCase().includes(busca.toLowerCase())
   );
@@ -52,6 +73,11 @@ export function ListaUsuarios({ usuarios }: Props) {
       {sucesso && (
         <div className="mb-4 rounded-lg px-4 py-3 text-sm font-medium bg-emerald-50 border border-emerald-200 text-emerald-700">
           {sucesso}
+        </div>
+      )}
+      {erro && (
+        <div className="mb-4 rounded-lg px-4 py-3 text-sm font-medium bg-red-50 border border-red-200 text-red-700">
+          {erro}
         </div>
       )}
 
@@ -89,15 +115,26 @@ export function ListaUsuarios({ usuarios }: Props) {
                   )}
                 </div>
 
-                {/* Botão redefinir — ADMIN não pode redefinir própria senha aqui */}
-                <button
-                  onClick={() => { setSucesso(null); setModal({ userId: u.id, nome: u.nome }); }}
-                  className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border
-                    border-slate-200 text-slate-600 bg-white hover:bg-amber-50 hover:text-amber-700
-                    hover:border-amber-300 transition"
-                >
-                  Redefinir senha
-                </button>
+                {/* Ações */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => { setSucesso(null); setErro(null); setModal({ userId: u.id, nome: u.nome }); }}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border
+                      border-slate-200 text-slate-600 bg-white hover:bg-amber-50 hover:text-amber-700
+                      hover:border-amber-300 transition"
+                  >
+                    Redefinir senha
+                  </button>
+                  {u.papel !== "ADMIN" && (
+                    <button
+                      onClick={() => { setSucesso(null); setErro(null); setConfirmDelete({ userId: u.id, nome: u.nome }); }}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg border
+                        border-red-200 text-red-600 bg-white hover:bg-red-50 hover:border-red-300 transition"
+                    >
+                      Remover
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -114,6 +151,39 @@ export function ListaUsuarios({ usuarios }: Props) {
             setSucesso(`Senha de ${modal.nome} redefinida com sucesso.`);
           }}
         />
+      )}
+
+      {/* Modal de confirmação de remoção */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm border border-slate-200">
+            <h2 className="text-lg font-bold text-slate-800 mb-2">Remover usuário</h2>
+            <p className="text-sm text-slate-600 mb-1">
+              Tem certeza que deseja remover <strong>{confirmDelete.nome}</strong>?
+            </p>
+            <p className="text-xs text-red-500 mb-5">
+              Todos os registros e diários deste usuário serão apagados permanentemente.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                disabled={removendo}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold border border-slate-200
+                  text-slate-600 bg-white hover:bg-slate-50 transition disabled:opacity-40"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleRemover(confirmDelete.userId, confirmDelete.nome)}
+                disabled={removendo}
+                className="flex-1 py-2 rounded-lg text-sm font-semibold
+                  bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-40"
+              >
+                {removendo ? "Removendo..." : "Confirmar remoção"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
