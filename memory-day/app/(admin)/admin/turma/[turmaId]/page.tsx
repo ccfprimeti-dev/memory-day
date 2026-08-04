@@ -30,12 +30,13 @@ export default async function AdminTurmaPage({ params }: Props) {
   const totalMaterias = await prisma.subject.count({ where: { turmaId: turma.id } });
   const alunoIds = turma.alunos.map((a) => a.id);
 
-  // Agrupa entries por (alunoId, data) e conta quantas matérias cada aluno entregou naquele dia
+  // Agrupa entries por (alunoId, data) e soma quantidadeAulas — não conta linhas,
+  // pois um registro de aula dupla tem quantidadeAulas=2 mas é 1 linha só.
   const grupos = alunoIds.length > 0
     ? await prisma.entry.groupBy({
         by: ["alunoId", "data"],
         where: { alunoId: { in: alunoIds } },
-        _count: { subjectId: true },
+        _sum: { quantidadeAulas: true },
       })
     : [];
 
@@ -43,7 +44,8 @@ export default async function AdminTurmaPage({ params }: Props) {
   const statsMap: Record<string, { completos: number; incompletos: number }> = {};
   for (const g of grupos) {
     if (!statsMap[g.alunoId]) statsMap[g.alunoId] = { completos: 0, incompletos: 0 };
-    if (totalMaterias > 0 && g._count.subjectId >= totalMaterias) {
+    const totalAulas = g._sum.quantidadeAulas ?? 0;
+    if (totalMaterias > 0 && totalAulas >= totalMaterias) {
       statsMap[g.alunoId].completos++;
     } else {
       statsMap[g.alunoId].incompletos++;
