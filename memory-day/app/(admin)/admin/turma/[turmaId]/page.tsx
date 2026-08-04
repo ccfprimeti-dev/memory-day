@@ -4,7 +4,7 @@ import { getSessao } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { TurmaPDFButton } from "@/components/admin/TurmaPDFButton";
-import { LABEL_NIVEL_ENSINO, type NivelEnsino } from "@/types";
+import { LABEL_NIVEL_ENSINO, MAX_AULAS, type NivelEnsino } from "@/types";
 
 interface Props {
   params: { turmaId: string };
@@ -26,12 +26,12 @@ export default async function AdminTurmaPage({ params }: Props) {
 
   if (!turma) notFound();
 
-  // Contagem de entregas por aluno: completo = todas as matérias no dia; incompleto = parcial
-  const totalMaterias = await prisma.subject.count({ where: { turmaId: turma.id } });
+  // Limite diário de aulas definido pelo nível da turma (ex: 5 para EF2)
+  const limiteDiario = MAX_AULAS[turma.nivelEnsino as NivelEnsino] ?? 5;
   const alunoIds = turma.alunos.map((a) => a.id);
 
-  // Agrupa entries por (alunoId, data) e soma quantidadeAulas — não conta linhas,
-  // pois um registro de aula dupla tem quantidadeAulas=2 mas é 1 linha só.
+  // Agrupa por (alunoId, data) e soma quantidadeAulas —
+  // aula dupla = 1 linha com quantidadeAulas=2, não 2 linhas.
   const grupos = alunoIds.length > 0
     ? await prisma.entry.groupBy({
         by: ["alunoId", "data"],
@@ -41,11 +41,12 @@ export default async function AdminTurmaPage({ params }: Props) {
     : [];
 
   // Monta mapa: alunoId → { completos, incompletos }
+  // Completo = soma de aulas no dia atingiu o limite do nível
   const statsMap: Record<string, { completos: number; incompletos: number }> = {};
   for (const g of grupos) {
     if (!statsMap[g.alunoId]) statsMap[g.alunoId] = { completos: 0, incompletos: 0 };
     const totalAulas = g._sum.quantidadeAulas ?? 0;
-    if (totalMaterias > 0 && totalAulas >= totalMaterias) {
+    if (totalAulas >= limiteDiario) {
       statsMap[g.alunoId].completos++;
     } else {
       statsMap[g.alunoId].incompletos++;
