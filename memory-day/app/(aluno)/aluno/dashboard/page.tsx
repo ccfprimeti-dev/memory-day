@@ -2,6 +2,7 @@ import { getSessao } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AulaCard } from "@/components/aluno/AulaCard";
 import { SelectSlot } from "@/components/aluno/SelectSlot";
+import { AulaExtra } from "@/components/aluno/AulaExtra";
 import type { FeedbackIA, NivelEnsino } from "@/types";
 import { LABEL_NIVEL_ENSINO, MAX_AULAS } from "@/types";
 import Link from "next/link";
@@ -41,7 +42,7 @@ export default async function AlunoDashboard() {
   const preenchidos = registrosHoje.reduce((soma, r) => soma + r.quantidadeAulas, 0);
   // Slots vazios: quantas aulas ainda podem ser registradas hoje (até o limite do nível)
   const slotsVazios = Math.max(0, maxAulas - preenchidos);
-  const pct = maxAulas > 0 ? Math.round((preenchidos / maxAulas) * 100) : 0;
+  const pct = maxAulas > 0 ? Math.min(100, Math.round((preenchidos / maxAulas) * 100)) : 0;
 
   return (
     <div>
@@ -133,6 +134,10 @@ export default async function AlunoDashboard() {
             />
           );
         })}
+
+        {/* Aula extra — key muda com "preenchidos" para reiniciar limpo após cada envio,
+            já que o registro salvo passa a aparecer na lista de cima como AulaCard. */}
+        <AulaExtra key={`extra-wrap-${preenchidos}`} materias={todasMaterias} data={hoje} />
       </div>
     </div>
   );

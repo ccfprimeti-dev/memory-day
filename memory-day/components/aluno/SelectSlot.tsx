@@ -6,14 +6,14 @@ import { FeedbackPanel } from "./FeedbackPanel";
 import type { FeedbackIA } from "@/types";
 
 interface Materia { id: string; nome: string; }
-interface Props { materias: Materia[]; data: string; numero: number; maxQuantidade?: number; }
+interface Props { materias: Materia[]; data: string; numero: number; maxQuantidade?: number; extra?: boolean; }
 interface DropPos { left: number; width: number; maxHeight: number; top?: number; bottom?: number; }
 
 const MARGEM_VIEWPORT = 12;
 const ALTURA_MIN_ABAIXO = 160;
 const ALTURA_IDEAL = 280;
 
-export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props) {
+export function SelectSlot({ materias, data, numero, maxQuantidade = 1, extra = false }: Props) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
   const [dropPos, setDropPos] = useState<DropPos>({ top: 0, left: 0, width: 0, maxHeight: ALTURA_IDEAL });
@@ -75,7 +75,7 @@ export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props)
       const res = await fetch("/api/registro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subjectId, texto, data, quantidadeAulas }),
+        body: JSON.stringify({ subjectId, texto, data, quantidadeAulas, ...(extra ? { extra: true } : {}) }),
       });
       const dados = await res.json();
       if (!res.ok) { setErro(dados.erro ?? "Error submitting."); return; }
@@ -144,7 +144,7 @@ export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props)
       <div className="px-5 py-3.5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-amber-50/60 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <span className="font-orbitron text-[10px] tracking-[0.4em] text-slate-400 uppercase">
-            Class {numero}
+            {extra ? "Extra class" : `Class ${numero}`}
           </span>
           {enviado && materiaSelecionada && (
             <>

@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
 
   const body: RegistroPayload = await req.json();
   const { subjectId, texto, data } = body;
+  const extra = body.extra === true;
 
   if (!subjectId || !texto?.trim() || !data) {
     return NextResponse.json({ erro: "subjectId, texto e data são obrigatórios" }, { status: 400 });
@@ -76,7 +77,8 @@ export async function POST(req: NextRequest) {
     const maxAulas = MAX_AULAS[(turmaAluno?.nivelEnsino ?? "EF2") as NivelEnsino] ?? 5;
     quantidadeAulas = Math.min(quantidadeAulas, maxAulas);
 
-    if (!jaExiste) {
+    // Aula extra ignora o limite diário — é um registro além do teto normal do nível
+    if (!jaExiste && !extra) {
       const entriesHoje = await prisma.entry.findMany({
         where: { alunoId: sessao.usuario.id, data },
         select: { quantidadeAulas: true },

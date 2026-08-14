@@ -76,6 +76,7 @@ export interface RegistroPayload {
   texto:           string;
   data:            string; // YYYY-MM-DD
   quantidadeAulas?: number; // quantas aulas esse registro cobre (ex: aula dupla = 2). Padrão: 1
+  extra?:          boolean; // true = aula extra, registrada além do limite diário do nível
 }
 
 // ─── Payload POST /api/relatorio ─────────────────────────────────────────────
