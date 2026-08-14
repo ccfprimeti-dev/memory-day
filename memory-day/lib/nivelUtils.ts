@@ -40,10 +40,10 @@ export function agregarNiveis(niveis: (string | null | undefined)[]): NivelIA | 
 
 /** Label legível para exibição no PDF. */
 export function labelNivel(nivel: NivelIA | null): string {
-  if (nivel === "AVANCADO")     return "Avançado";
-  if (nivel === "INTERMEDIARIO") return "Intermediário";
-  if (nivel === "BASICO")        return "Básico";
-  return "Sem dados";
+  if (nivel === "AVANCADO")     return "Advanced";
+  if (nivel === "INTERMEDIARIO") return "Intermediate";
+  if (nivel === "BASICO")        return "Basic";
+  return "No data";
 }
 
 /** Cor de preenchimento da barra conforme o nível. */

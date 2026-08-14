@@ -28,7 +28,7 @@ export default async function ProfessorLayout({ children }: { children: React.Re
             </Link>
             <Link href="/professor/dashboard"
               className="hidden sm:block px-3 py-1.5 rounded-lg text-xs font-orbitron tracking-widest text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition uppercase">
-              Relatórios
+              Reports
             </Link>
           </div>
           <div className="flex items-center gap-3">

@@ -31,9 +31,9 @@ export const MAX_AULAS: Record<NivelEnsino, number> = {
 
 // Rótulo legível para cada nível de ensino
 export const LABEL_NIVEL_ENSINO: Record<NivelEnsino, string> = {
-  EF1: "Fundamental 1",
-  EF2: "Fundamental 2",
-  EM:  "Ensino Médio",
+  EF1: "Elementary 1",
+  EF2: "Elementary 2",
+  EM:  "High School",
 };
 
 // ─── Matéria (com contexto de turma) ─────────────────────────────────────────

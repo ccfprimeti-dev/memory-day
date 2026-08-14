@@ -17,11 +17,11 @@ export default function EsqueciSenhaPage() {
     setErro(null);
 
     if (novaSenha.length < 6) {
-      setErro("A nova senha deve ter pelo menos 6 caracteres.");
+      setErro("New password must be at least 6 characters.");
       return;
     }
     if (novaSenha !== confirmar) {
-      setErro("As senhas não coincidem.");
+      setErro("Passwords do not match.");
       return;
     }
 
@@ -33,11 +33,11 @@ export default function EsqueciSenhaPage() {
         body:    JSON.stringify({ email, novaSenha }),
       });
       const json = await res.json();
-      if (!res.ok) { setErro(json.erro ?? "Erro ao redefinir senha."); return; }
+      if (!res.ok) { setErro(json.erro ?? "Error resetting password."); return; }
       setSucesso(true);
       setTimeout(() => router.push("/login"), 3000);
     } catch {
-      setErro("Falha na conexão.");
+      setErro("Connection failed.");
     } finally {
       setSalvando(false);
     }
@@ -53,22 +53,22 @@ export default function EsqueciSenhaPage() {
             alt="Prime Bilingual School"
             className="h-10 w-auto mx-auto mb-4 drop-shadow-sm"
           />
-          <h1 className="text-2xl font-bold text-slate-800">Redefinir senha</h1>
+          <h1 className="text-2xl font-bold text-slate-800">Reset password</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Informe seu e-mail e escolha uma nova senha.
+            Enter your email and choose a new password.
           </p>
         </div>
 
         {sucesso ? (
           <div className="glass-card rounded-2xl p-6 text-center border border-emerald-200">
-            <p className="text-emerald-700 font-semibold text-sm">Senha redefinida com sucesso!</p>
-            <p className="text-slate-400 text-xs mt-1">Redirecionando para o login…</p>
+            <p className="text-emerald-700 font-semibold text-sm">Password reset successfully!</p>
+            <p className="text-slate-400 text-xs mt-1">Redirecting to login…</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 space-y-4 border border-amber-100">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5">
-                E-mail da conta
+                Account email
               </label>
               <input
                 type="email"
@@ -83,7 +83,7 @@ export default function EsqueciSenhaPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5">
-                Nova senha
+                New password
               </label>
               <input
                 type="password"
@@ -91,14 +91,14 @@ export default function EsqueciSenhaPage() {
                 onChange={e => setNovaSenha(e.target.value)}
                 required
                 autoComplete="new-password"
-                placeholder="Mínimo 6 caracteres"
+                placeholder="At least 6 characters"
                 className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm
                   focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5">
-                Confirmar nova senha
+                Confirm new password
               </label>
               <input
                 type="password"
@@ -106,7 +106,7 @@ export default function EsqueciSenhaPage() {
                 onChange={e => setConfirmar(e.target.value)}
                 required
                 autoComplete="new-password"
-                placeholder="Repita a nova senha"
+                placeholder="Repeat new password"
                 className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm
                   focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition"
               />
@@ -126,12 +126,12 @@ export default function EsqueciSenhaPage() {
                 hover:from-slate-800 hover:via-amber-500 hover:to-amber-300
                 disabled:opacity-40 disabled:cursor-not-allowed text-white"
             >
-              {salvando ? "Redefinindo…" : "Redefinir senha"}
+              {salvando ? "Resetting…" : "Reset password"}
             </button>
 
             <p className="text-center text-xs text-slate-400">
               <Link href="/login" className="hover:text-amber-600 transition">
-                ← Voltar ao login
+                ← Back to login
               </Link>
             </p>
           </form>

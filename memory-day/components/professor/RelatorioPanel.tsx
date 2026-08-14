@@ -32,7 +32,7 @@ export function RelatorioPanel({
       const res = await fetch(url);
       if (!res.ok) {
         const json = await res.json().catch(() => ({}));
-        setErroExport(json.erro ?? "Erro ao gerar PDF.");
+        setErroExport(json.erro ?? "Error generating PDF.");
         return;
       }
       const blob = await res.blob();
@@ -49,7 +49,7 @@ export function RelatorioPanel({
       a.click();
       URL.revokeObjectURL(objUrl);
     } catch {
-      setErroExport("Falha na conexão ao gerar PDF.");
+      setErroExport("Connection failed while generating PDF.");
     } finally {
       setExportando(false);
     }
@@ -66,16 +66,16 @@ export function RelatorioPanel({
             <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{nomeMateria}</h2>
           </div>
           <p className="text-xs text-slate-500 tracking-wide">
-            Data: {data} · Gerado em: {new Date(geradoEm).toLocaleString("pt-BR")}
+            Date: {data} · Generated at: {new Date(geradoEm).toLocaleString("en-US")}
           </p>
         </div>
 
         <div className="flex gap-2 flex-wrap items-center">
           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${corNivel[relatorio.nivelGeral] ?? "bg-slate-100 text-slate-600 border border-slate-200"}`}>
-            Nível: {relatorio.nivelGeral}
+            Level: {relatorio.nivelGeral}
           </span>
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-            {relatorio.percentualRegistros}% participaram
+            {relatorio.percentualRegistros}% participated
           </span>
 
           <button
@@ -91,11 +91,11 @@ export function RelatorioPanel({
               <><svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-              </svg> Gerando…</>
+              </svg> Generating…</>
             ) : (
               <><svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-              </svg> Exportar PDF</>
+              </svg> Export PDF</>
             )}
           </button>
         </div>
@@ -109,14 +109,14 @@ export function RelatorioPanel({
 
       {/* Síntese */}
       <div className="glass-card rounded-xl p-5">
-        <p className="text-xs font-semibold uppercase tracking-widest text-amber-700 mb-3">✦ Síntese da Turma</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-amber-700 mb-3">✦ Class Summary</p>
         <p className="text-sm text-slate-600 leading-relaxed">{relatorio.resumoGeral}</p>
       </div>
 
       {/* Lacunas */}
       <div className="rounded-xl p-5 bg-amber-50 border border-amber-200">
         <p className="text-xs font-semibold uppercase tracking-widest text-amber-600 mb-3">
-          ⚠ Lacunas mais recorrentes na turma
+          ⚠ Most common gaps in the class
         </p>
         <ul className="space-y-2">
           {relatorio.lacunasComuns.map((lacuna, i) => (
@@ -131,7 +131,7 @@ export function RelatorioPanel({
       {/* Recomendações */}
       <div className="rounded-xl p-5 bg-emerald-50 border border-emerald-200">
         <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 mb-3">
-          → Recomendações para a próxima aula
+          → Recommendations for the next class
         </p>
         <ul className="space-y-2">
           {relatorio.recomendacoes.map((rec, i) => (

@@ -28,8 +28,8 @@ export default async function AlunoLayout({ children }: { children: React.ReactN
             </Link>
             <div className="hidden sm:flex items-center gap-1">
               {[
-                { href: "/aluno/dashboard", label: "Hoje" },
-                { href: "/aluno/historico", label: "Histórico" },
+                { href: "/aluno/dashboard", label: "Today" },
+                { href: "/aluno/historico", label: "History" },
               ].map((link) => (
                 <Link key={link.href} href={link.href}
                   className="px-3 py-1.5 rounded-lg text-xs font-orbitron tracking-widest text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition uppercase">

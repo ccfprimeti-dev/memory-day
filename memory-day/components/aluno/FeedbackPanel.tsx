@@ -12,7 +12,7 @@ export function FeedbackPanel({ feedback, nomeMateria }: { feedback: FeedbackIA;
         className="w-full flex items-center justify-between px-5 py-3 text-xs font-semibold uppercase tracking-widest text-amber-700 hover:bg-amber-50 transition"
       >
         <span className="flex items-center gap-2">
-          <span className="text-base">🤖</span> Análise da IA — {nomeMateria}
+          <span className="text-base">🤖</span> AI Analysis — {nomeMateria}
         </span>
         <span className="text-amber-500">{expandido ? "▲" : "▼"}</span>
       </button>
@@ -22,7 +22,7 @@ export function FeedbackPanel({ feedback, nomeMateria }: { feedback: FeedbackIA;
           {/* Resumo */}
           <div className="bg-white rounded-lg p-4 border border-slate-100">
             <p className="text-xs font-semibold uppercase tracking-widest text-amber-700 mb-2">
-              ✦ O que você demonstrou entender
+              ✦ What you showed you understood
             </p>
             <p className="text-sm text-slate-600 leading-relaxed">{feedback.resumo}</p>
           </div>
@@ -31,7 +31,7 @@ export function FeedbackPanel({ feedback, nomeMateria }: { feedback: FeedbackIA;
           {feedback.lacunas.length > 0 && (
             <div className="rounded-lg p-4 bg-amber-50 border border-amber-200">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-600 mb-2">
-                ⚠ Pontos que merecem atenção
+                ⚠ Points to review
               </p>
               <ul className="space-y-1.5">
                 {feedback.lacunas.map((lacuna, i) => (
@@ -47,7 +47,7 @@ export function FeedbackPanel({ feedback, nomeMateria }: { feedback: FeedbackIA;
           {feedback.sugestoes.length > 0 && (
             <div className="rounded-lg p-4 bg-emerald-50 border border-emerald-200">
               <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 mb-2">
-                → Sugestões de estudo
+                → Study suggestions
               </p>
               <ul className="space-y-1.5">
                 {feedback.sugestoes.map((s, i) => (

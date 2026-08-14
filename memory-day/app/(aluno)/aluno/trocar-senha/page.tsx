@@ -17,11 +17,11 @@ export default function TrocarSenhaPage() {
     setErro(null);
 
     if (novaSenha.length < 6) {
-      setErro("A nova senha deve ter pelo menos 6 caracteres.");
+      setErro("New password must be at least 6 characters.");
       return;
     }
     if (novaSenha !== confirmar) {
-      setErro("As senhas não coincidem.");
+      setErro("Passwords do not match.");
       return;
     }
 
@@ -33,12 +33,12 @@ export default function TrocarSenhaPage() {
         body:    JSON.stringify({ senhaAtual, novaSenha }),
       });
       const json = await res.json();
-      if (!res.ok) { setErro(json.erro ?? "Erro ao trocar senha."); return; }
+      if (!res.ok) { setErro(json.erro ?? "Error changing password."); return; }
       setSucesso(true);
       // Redireciona para o dashboard após 2 segundos
       setTimeout(() => router.push("/aluno/dashboard"), 2000);
     } catch {
-      setErro("Falha na conexão.");
+      setErro("Connection failed.");
     } finally {
       setSalvando(false);
     }
@@ -53,22 +53,22 @@ export default function TrocarSenhaPage() {
             alt="Prime Bilingual School"
             className="h-10 w-auto mx-auto mb-4 drop-shadow-sm"
           />
-          <h1 className="text-2xl font-bold text-slate-800">Trocar senha</h1>
+          <h1 className="text-2xl font-bold text-slate-800">Change password</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Informe sua senha atual para definir uma nova.
+            Enter your current password to set a new one.
           </p>
         </div>
 
         {sucesso ? (
           <div className="glass-card rounded-2xl p-6 text-center border border-emerald-200">
-            <p className="text-emerald-700 font-semibold text-sm">Senha alterada com sucesso!</p>
-            <p className="text-slate-400 text-xs mt-1">Redirecionando…</p>
+            <p className="text-emerald-700 font-semibold text-sm">Password changed successfully!</p>
+            <p className="text-slate-400 text-xs mt-1">Redirecting…</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 space-y-4 border border-amber-100">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5">
-                Senha atual
+                Current password
               </label>
               <input
                 type="password"
@@ -82,7 +82,7 @@ export default function TrocarSenhaPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5">
-                Nova senha
+                New password
               </label>
               <input
                 type="password"
@@ -90,14 +90,14 @@ export default function TrocarSenhaPage() {
                 onChange={e => setNovaSenha(e.target.value)}
                 required
                 autoComplete="new-password"
-                placeholder="Mínimo 6 caracteres"
+                placeholder="At least 6 characters"
                 className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm
                   focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5">
-                Confirmar nova senha
+                Confirm new password
               </label>
               <input
                 type="password"
@@ -105,7 +105,7 @@ export default function TrocarSenhaPage() {
                 onChange={e => setConfirmar(e.target.value)}
                 required
                 autoComplete="new-password"
-                placeholder="Repita a nova senha"
+                placeholder="Repeat new password"
                 className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm
                   focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition"
               />
@@ -125,12 +125,12 @@ export default function TrocarSenhaPage() {
                 hover:from-slate-800 hover:via-amber-500 hover:to-amber-300
                 disabled:opacity-40 disabled:cursor-not-allowed text-white"
             >
-              {salvando ? "Salvando…" : "Trocar senha"}
+              {salvando ? "Saving…" : "Change password"}
             </button>
 
             <p className="text-center text-xs text-slate-400">
               <Link href="/aluno/dashboard" className="hover:text-amber-600 transition">
-                ← Voltar ao painel
+                ← Back to dashboard
               </Link>
             </p>
           </form>

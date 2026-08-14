@@ -49,13 +49,13 @@ export default async function AlunoDashboard() {
       <div className="mb-8 flex items-start justify-between flex-wrap gap-3">
         <div>
           <p className="font-orbitron text-[10px] tracking-[0.4em] text-amber-600/70 uppercase mb-1">
-            Painel do Aluno
+            Student Panel
           </p>
           <h1 className="text-2xl font-bold text-slate-800">
-            Olá, <span className="text-gradient font-orbitron">{usuario.nome.split(" ")[0]}</span>
+            Hello, <span className="text-gradient font-orbitron">{usuario.nome.split(" ")[0]}</span>
           </h1>
           <p className="text-slate-500 text-sm mt-1 capitalize">
-            {new Date().toLocaleDateString("pt-BR", {
+            {new Date().toLocaleDateString("en-US", {
               weekday: "long", day: "numeric", month: "long", year: "numeric",
               timeZone: "America/Sao_Paulo",
             })}
@@ -65,7 +65,7 @@ export default async function AlunoDashboard() {
           href="/aluno/trocar-senha"
           className="text-xs text-slate-400 hover:text-amber-600 transition self-start mt-1"
         >
-          Trocar senha
+          Change password
         </Link>
       </div>
 
@@ -74,7 +74,7 @@ export default async function AlunoDashboard() {
         <div className="flex items-center justify-between mb-3">
           <div>
             <span className="font-orbitron text-[10px] tracking-[0.3em] text-slate-500 uppercase">
-              Progresso de hoje
+              Today&apos;s progress
             </span>
             <span className={`ml-2 text-[9px] font-orbitron tracking-widest uppercase px-1.5 py-0.5 rounded border
               ${nivelEnsino === "EM"
@@ -97,7 +97,7 @@ export default async function AlunoDashboard() {
         </div>
         {preenchidos >= maxAulas && maxAulas > 0 && (
           <p className="font-orbitron text-[10px] tracking-widest text-amber-700 mt-3 text-center uppercase">
-            ✦ Missão cumprida — todas as aulas registradas
+            ✦ Mission complete — all classes recorded
           </p>
         )}
       </div>

@@ -67,8 +67,8 @@ export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props)
   function handleDropdownMouseDown(e: React.MouseEvent) { e.stopPropagation(); }
 
   async function handleEnviar() {
-    if (!subjectId) { setErro("Selecione a aula primeiro."); return; }
-    if (texto.trim().length < 20) { setErro("Escreva pelo menos 20 caracteres."); return; }
+    if (!subjectId) { setErro("Please select a class first."); return; }
+    if (texto.trim().length < 20) { setErro("Write at least 20 characters."); return; }
     setErro(null);
     setCarregando(true);
     try {
@@ -78,12 +78,12 @@ export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props)
         body: JSON.stringify({ subjectId, texto, data, quantidadeAulas }),
       });
       const dados = await res.json();
-      if (!res.ok) { setErro(dados.erro ?? "Erro ao enviar."); return; }
+      if (!res.ok) { setErro(dados.erro ?? "Error submitting."); return; }
       setFeedback(dados.lacunasIA);
       setEnviado(true);
       router.refresh();
     } catch {
-      setErro("Falha na conexão. Tente novamente.");
+      setErro("Connection failed. Please try again.");
     } finally {
       setCarregando(false);
     }
@@ -108,7 +108,7 @@ export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props)
         >
           {materias.length === 0 ? (
             <div className="px-4 py-3 text-sm text-slate-400 text-center">
-              Nenhuma matéria disponível
+              No subjects available
             </div>
           ) : (
             materias.map((m, i) => (
@@ -144,7 +144,7 @@ export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props)
       <div className="px-5 py-3.5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-amber-50/60 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <span className="font-orbitron text-[10px] tracking-[0.4em] text-slate-400 uppercase">
-            Aula {numero}
+            Class {numero}
           </span>
           {enviado && materiaSelecionada && (
             <>
@@ -155,7 +155,7 @@ export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props)
         </div>
         {enviado && (
           <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-full">
-            ✓ Enviado
+            ✓ Submitted
           </span>
         )}
       </div>
@@ -165,7 +165,7 @@ export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props)
         {!enviado && (
           <div>
             <label className="block text-[10px] font-orbitron tracking-[0.3em] text-slate-500 uppercase mb-2">
-              Selecione a matéria
+              Select subject
             </label>
             <button
               ref={botaoRef}
@@ -177,7 +177,7 @@ export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props)
                 focus:ring-2 focus:ring-amber-100"
             >
               <span className={materiaSelecionada ? "text-slate-700" : "text-slate-400"}>
-                {materiaSelecionada ? materiaSelecionada.nome : "Escolha a aula de hoje…"}
+                {materiaSelecionada ? materiaSelecionada.nome : "Choose today's class…"}
               </span>
               <svg
                 className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${aberto ? "rotate-180" : ""}`}
@@ -194,7 +194,7 @@ export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props)
         {subjectId && !enviado && maxQuantidade > 1 && (
           <div>
             <label className="block text-[10px] font-orbitron tracking-[0.3em] text-slate-500 uppercase mb-2">
-              Total de aulas
+              Number of classes
             </label>
             <div className="flex gap-2">
               {Array.from({ length: maxQuantidade }, (_, i) => i + 1).map((n) => (
@@ -213,7 +213,7 @@ export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props)
             </div>
             {quantidadeAulas > 1 && (
               <p className="text-[11px] text-slate-400 mt-1.5">
-                Esse registro vai contar como {quantidadeAulas} aulas hoje (ex: aula dupla).
+                This record will count as {quantidadeAulas} classes today (e.g. double period).
               </p>
             )}
           </div>
@@ -223,13 +223,13 @@ export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props)
         {(subjectId || enviado) && (
           <div>
             <label className="block text-[10px] font-orbitron tracking-[0.3em] text-slate-500 uppercase mb-2">
-              O que você aprendeu hoje?
+              What did you learn today?
             </label>
             <textarea
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               rows={4}
-              placeholder="Descreva com suas próprias palavras o que foi ensinado, o que você entendeu e o que ficou com dúvida…"
+              placeholder="Describe in your own words what was taught, what you understood, and what you still have questions about…"
               disabled={carregando || enviado}
               className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700
                 placeholder-slate-400 focus:outline-none focus:border-amber-400
@@ -257,7 +257,7 @@ export function SelectSlot({ materias, data, numero, maxQuantidade = 1 }: Props)
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                 </svg>
               )}
-              {carregando ? "Analisando…" : "Enviar e analisar"}
+              {carregando ? "Analyzing…" : "Submit and analyze"}
             </button>
           </div>
         )}

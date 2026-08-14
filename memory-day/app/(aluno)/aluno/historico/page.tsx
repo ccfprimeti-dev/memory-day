@@ -24,17 +24,17 @@ export default async function AlunoHistorico() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
-          Meu <span className="text-gradient font-orbitron">histórico</span>
+          My <span className="text-gradient font-orbitron">history</span>
         </h1>
         <p className="text-slate-500 text-sm mt-1">
-          Seus registros diários e feedbacks gerados pela IA.
+          Your daily records and AI-generated feedback.
         </p>
       </div>
 
       {datas.length === 0 && (
         <div className="glass-card rounded-xl p-8 text-center">
-          <p className="text-slate-500 text-sm">Você ainda não tem registros.</p>
-          <p className="text-slate-400 text-xs mt-1">Vá ao Dashboard e registre sua primeira aula!</p>
+          <p className="text-slate-500 text-sm">You don&apos;t have any records yet.</p>
+          <p className="text-slate-400 text-xs mt-1">Go to the Dashboard and record your first class!</p>
         </div>
       )}
 
@@ -44,7 +44,7 @@ export default async function AlunoHistorico() {
             <div className="flex items-center gap-3 mb-3">
               <div className="h-px flex-1 bg-slate-200" />
               <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-                {new Date(data + "T12:00:00").toLocaleDateString("pt-BR", {
+                {new Date(data + "T12:00:00").toLocaleDateString("en-US", {
                   weekday: "long", day: "numeric", month: "long",
                 })}
               </span>
@@ -63,11 +63,11 @@ export default async function AlunoHistorico() {
                       <span className="font-semibold text-slate-800 text-sm">{registro.materia.nome}</span>
                       {foiAnalisado ? (
                         <span className="text-xs font-semibold text-amber-800 bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-full">
-                          ✓ Analisado pela IA
+                          ✓ AI analyzed
                         </span>
                       ) : (
                         <span className="text-xs font-semibold text-slate-400 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full">
-                          ○ Não analisado ainda
+                          ○ Not analyzed yet
                         </span>
                       )}
                     </div>
@@ -75,7 +75,7 @@ export default async function AlunoHistorico() {
                     <div className="px-5 py-4 space-y-4">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5">
-                          Seu registro
+                          Your record
                         </p>
                         <p className="text-sm text-slate-700 leading-relaxed">{registro.textoDoAluno}</p>
                       </div>
@@ -84,7 +84,7 @@ export default async function AlunoHistorico() {
                         <div className="space-y-3">
                           <div className="rounded-lg p-4 bg-white border border-slate-100">
                             <p className="text-xs font-semibold uppercase tracking-widest text-amber-700 mb-2">
-                              ✦ O que você demonstrou entender
+                              ✦ What you showed you understood
                             </p>
                             <p className="text-sm text-slate-600 leading-relaxed">{feedback.resumo}</p>
                           </div>
@@ -92,7 +92,7 @@ export default async function AlunoHistorico() {
                           {feedback.lacunas.length > 0 && (
                             <div className="rounded-lg p-4 bg-amber-50 border border-amber-200">
                               <p className="text-xs font-semibold uppercase tracking-widest text-amber-600 mb-2">
-                                ⚠ Pontos de atenção
+                                ⚠ Points to review
                               </p>
                               <ul className="space-y-1.5">
                                 {feedback.lacunas.map((l, i) => (
@@ -107,7 +107,7 @@ export default async function AlunoHistorico() {
                           {feedback.sugestoes.length > 0 && (
                             <div className="rounded-lg p-4 bg-emerald-50 border border-emerald-200">
                               <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600 mb-2">
-                                → Sugestões de estudo
+                                → Study suggestions
                               </p>
                               <ul className="space-y-1.5">
                                 {feedback.sugestoes.map((s, i) => (
@@ -122,10 +122,10 @@ export default async function AlunoHistorico() {
                       ) : (
                         <div className="rounded-lg p-4 bg-slate-50 border border-slate-200 text-center">
                           <p className="text-xs text-slate-500">
-                            Você preencheu o texto mas ainda não enviou para análise.
+                            You filled in the text but haven&apos;t submitted it for analysis yet.
                           </p>
                           <p className="text-xs text-slate-400 mt-0.5">
-                            Vá ao <span className="text-amber-600">Dashboard → {registro.materia.nome}</span> e clique em &quot;Enviar e analisar&quot;.
+                            Go to <span className="text-amber-600">Dashboard → {registro.materia.nome}</span> and click &quot;Submit and analyze&quot;.
                           </p>
                         </div>
                       )}

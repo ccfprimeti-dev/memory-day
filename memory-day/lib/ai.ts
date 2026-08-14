@@ -168,8 +168,8 @@ export async function analisarRegistroAluno(
 
   const blocoBncc = habilidadesEsperadas
     ? `Habilidades BNCC desta aula: "${habilidadesEsperadas}". Use como gabarito exclusivo.`
-    : `Identifique as habilidades BNCC esperadas para "${nomeMateria}" especificamente no ${serie} `
-    + `(use as habilidades da BNCC para o ${serie}, não do nível de ensino inteiro). `
+    : `Identifique APENAS a(s) habilidade(s) BNCC que se relacionam com o TEMA ESPECÍFICO que o aluno menciona no texto — nunca o conjunto inteiro de habilidades de "${nomeMateria}" para o ${serie}. `
+    + `Uma aula cobre um recorte pontual do ano letivo, não a disciplina toda: se o aluno menciona só um tópico, o gabarito é a habilidade daquele tópico, não de tudo que a BNCC prevê para "${nomeMateria}" no ${serie}. `
     + `Registre em "habilidade_bncc_considerada".`;
 
   const resposta = await client.messages.create({
@@ -183,6 +183,7 @@ ESCALA DE EXIGÊNCIA (7 graus, crescente de rigor e profundidade):
   Grau 1: 6º ano EF → Grau 2: 7º ano EF → Grau 3: 8º ano EF → Grau 4: 9º ano EF → Grau 5: 1º EM → Grau 6: 2º EM → Grau 7: 3º EM
 Este aluno é do ${serie} — Grau ${pos} de 7.
 REGRA: calibre o rigor EXATAMENTE para o Grau ${pos}. A exigência deve ser maior que o Grau ${pos - 1} e menor que o Grau ${pos + 1}. O mesmo texto deve receber nota progressivamente menor conforme a série sobe — porque a expectativa da série sobe junto.
+ESCOPO DO REGISTRO — REGRA INVIOLÁVEL: cada registro cobre APENAS UMA aula de ~45-50 minutos sobre o tema pontual que o aluno menciona — nunca a disciplina inteira, o bimestre ou o ano letivo. Jamais avalie como se o aluno devesse demonstrar tudo que a BNCC prevê para a disciplina no ano; avalie apenas o que é proporcional ao que se aprende e se registra sobre aquele tema específico em uma única aula.
 Responda SOMENTE em JSON válido.`,
     messages: [
       {
@@ -195,7 +196,7 @@ Texto do aluno (${serie} — Grau ${pos}/7 na escala de exigência):
 ${textoDoAluno}
 """
 
-CONTEXTO: Diário de aula — o aluno registrou o que viveu e aprendeu hoje. Avalie a qualidade desse registro considerando o que é esperado de um aluno do Grau ${pos}/7 (${serie}). Não exija rigor acadêmico formal — exija especificidade proporcional ao Grau ${pos}.
+CONTEXTO: Diário de aula — o aluno tem ~45-50 minutos de aula e registrou o que viveu e aprendeu HOJE sobre UM tema pontual, não a disciplina inteira. Avalie a qualidade desse registro considerando o que é esperado de um aluno do Grau ${pos}/7 (${serie}) para uma única aula sobre esse tema. Não exija rigor acadêmico formal, e não penalize por não cobrir tópicos da disciplina que não fizeram parte desta aula — exija especificidade proporcional ao Grau ${pos} sobre o que ele efetivamente viveu na aula.
 
 RÉGUA CENTRAL (aplicada ao Grau ${pos} — ${serie}):
 • Descreveu bem a aula para o Grau ${pos} → conteúdo ALTO
@@ -210,7 +211,7 @@ PASSO 2 — Pontue com valores irregulares (ex: 37, 63, 78 — nunca só múltip
 
 CONTEÚDO (avalie em relação ao esperado para o Grau ${pos} — ${serie}):
 • correcao_conceitual: o que mencionou está correto no contexto da matéria? Lista vazia → 0. Erros graves → baixo. Correto e específico → alto.
-• completude: o aluno cobriu bem o que o texto sugere que foi a aula? Lembre: uma aula de Grau ${pos} sobre qualquer tema costuma abordar o conteúdo com profundidade e abrangência proporcionais ao Grau ${pos}. Um texto que só cobre aspectos introdutórios — típicos de séries muito mais jovens — representa completude BAIXA para o Grau ${pos}, mesmo que correto. Lista vazia → 0. Cobriu só o básico introdutório para a série → baixo. Cobriu de forma proporcional ao Grau ${pos} → médio/alto.
+• completude: o aluno cobriu bem o TEMA ESPECÍFICO que ele mencionou como sendo a aula de hoje — nunca compare com a disciplina inteira ou com tudo que a BNCC prevê para "${nomeMateria}" no ${serie} ao longo do ano. Compare apenas com o que é razoável abordar em UMA aula de ~45-50 minutos sobre esse tema pontual, calibrado ao Grau ${pos}. NUNCA penalize por não cobrir tópicos da disciplina que não fizeram parte desta aula específica — isso não é falta de completude, é escopo de uma aula. Lista vazia → 0. Mencionou o tema mas sem elaborar o que uma aula do Grau ${pos} costuma explorar sobre ele → baixo. Cobriu o tema com o nível de detalhe esperado de uma aula do Grau ${pos} sobre esse tema específico → médio/alto.
 • profundidade: Âncoras para o Grau ${pos} (${serie}): ${profDepth} Lista vazia → 0.
 
 ESCRITA (independente do conteúdo):

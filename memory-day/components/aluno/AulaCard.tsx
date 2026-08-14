@@ -20,7 +20,7 @@ export function AulaCard({ subjectId, nomeMateria, data, textoInicial = "", feed
   const [enviado, setEnviado] = useState(!!feedbackInicial);
 
   async function handleEnviar() {
-    if (texto.trim().length < 20) { setErro("Escreva pelo menos 20 caracteres."); return; }
+    if (texto.trim().length < 20) { setErro("Write at least 20 characters."); return; }
     setErro(null);
     setCarregando(true);
     try {
@@ -30,11 +30,11 @@ export function AulaCard({ subjectId, nomeMateria, data, textoInicial = "", feed
         body: JSON.stringify({ subjectId, texto, data }),
       });
       const dados = await res.json();
-      if (!res.ok) { setErro(dados.erro ?? "Erro ao enviar."); return; }
+      if (!res.ok) { setErro(dados.erro ?? "Error submitting."); return; }
       setFeedback(dados.lacunasIA);
       setEnviado(true);
     } catch {
-      setErro("Falha na conexão. Tente novamente.");
+      setErro("Connection failed. Please try again.");
     } finally {
       setCarregando(false);
     }
@@ -48,13 +48,13 @@ export function AulaCard({ subjectId, nomeMateria, data, textoInicial = "", feed
           <h3 className="font-semibold text-slate-800">{nomeMateria}</h3>
           {quantidadeAulas > 1 && (
             <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">
-              {quantidadeAulas} aulas
+              {quantidadeAulas} classes
             </span>
           )}
         </div>
         {enviado && (
           <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 bg-amber-100 border border-amber-200 px-2.5 py-1 rounded-full">
-            ✓ Enviado
+            ✓ Submitted
           </span>
         )}
       </div>
@@ -62,13 +62,13 @@ export function AulaCard({ subjectId, nomeMateria, data, textoInicial = "", feed
       {/* Textarea */}
       <div className="px-5 py-4">
         <label className="block text-xs font-semibold uppercase tracking-widest text-amber-600/80 mb-2">
-          O que você aprendeu hoje?
+          What did you learn today?
         </label>
         <textarea
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           rows={4}
-          placeholder="Descreva com suas próprias palavras o que foi ensinado, o que você entendeu e o que ficou com dúvida..."
+          placeholder="Describe in your own words what was taught, what you understood, and what you still have questions about..."
           disabled={carregando}
           className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700
             placeholder-slate-400 focus:outline-none focus:border-amber-400
@@ -92,7 +92,7 @@ export function AulaCard({ subjectId, nomeMateria, data, textoInicial = "", feed
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
             )}
-            {carregando ? "Analisando..." : enviado ? "Reanalisar" : "Enviar e analisar"}
+            {carregando ? "Analyzing..." : enviado ? "Re-analyze" : "Submit and analyze"}
           </button>
         </div>
       </div>
