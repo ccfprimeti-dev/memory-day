@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ erro: "Credenciais inválidas" }, { status: 401 });
     }
 
-    // Grava a sessão com duração correta: 30 dias se lembrarMe, session cookie se não
+    // Grava a sessão com duração correta: 400 dias (máx. permitido pelo navegador) se lembrarMe, session cookie se não
     const cookieStore = await cookies();
     const sessao = await getIronSession<{ usuario?: SessaoUsuario }>(cookieStore, sessionOptionsLogin(!!lembrarMe));
     sessao.usuario = {

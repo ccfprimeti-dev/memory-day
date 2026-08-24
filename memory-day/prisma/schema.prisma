@@ -18,6 +18,11 @@ model Turma {
   codigoConvite String   @unique // reservado para entrada futura por código
   criadoEm      DateTime @default(now())
 
+  // ── Calendário letivo — cadastrado manualmente pelo admin ──
+  // Usado para calcular a taxa de entrega do aluno (dias com registro / dias decorridos).
+  diasLetivosTotais     Int @default(200) // total de dias letivos previstos para o ano
+  diasLetivosDecorridos Int @default(0)   // quantos já se passaram — atualizado periodicamente pelo admin
+
   alunos      User[]           @relation("AlunoTurma")
   professores TurmaProfessor[]
   materias    Subject[]

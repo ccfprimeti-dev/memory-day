@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import type { FeedbackIA } from "@/types";
 import { AdminDayView } from "@/components/admin/AdminDayView";
+import { corAproveitamento } from "@/lib/nivelUtils";
+import type { NotaFinalAluno } from "@/lib/notaFinal";
 
 interface Registro {
   id:           string;
@@ -21,6 +23,10 @@ interface Props {
   nomeTurma:   string;
   turmaId:     string;
   dataInicial: string; // YYYY-MM-DD
+  nota:                   NotaFinalAluno;
+  diasComRegistro:        number;
+  diasLetivosTotais:      number;
+  diasLetivosDecorridos:  number;
 }
 
 const PERIODOS = [
@@ -44,7 +50,10 @@ function corNivel(n: string | null) {
   return "text-slate-400 bg-slate-50 border-slate-200";
 }
 
-export function AlunoAdminView({ alunoId, nomeAluno, nomeTurma, turmaId, dataInicial }: Props) {
+export function AlunoAdminView({
+  alunoId, nomeAluno, nomeTurma, turmaId, dataInicial,
+  nota, diasComRegistro, diasLetivosTotais, diasLetivosDecorridos,
+}: Props) {
   const [data,       setData]       = useState(dataInicial);
   const [registros,  setRegistros]  = useState<Registro[]>([]);
   const [carregando, setCarregando] = useState(false);
@@ -144,6 +153,52 @@ export function AlunoAdminView({ alunoId, nomeAluno, nomeTurma, turmaId, dataIni
               </>
             ) : "Gerar PDF do aluno"}
           </button>
+        </div>
+      </div>
+
+      {/* Nota Memory Day — 50% qualidade (aproveitamento) + 50% taxa de entrega (dias letivos) */}
+      <div className="glass-card rounded-xl p-5 mb-6 flex items-center gap-6 flex-wrap">
+        <div className="flex items-center gap-3 shrink-0">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center border-2 shrink-0"
+            style={{
+              backgroundColor: `${corAproveitamento(nota.notaFinal)}14`,
+              borderColor: corAproveitamento(nota.notaFinal),
+            }}
+          >
+            <span className="text-xl font-bold" style={{ color: corAproveitamento(nota.notaFinal) }}>
+              {nota.notaFinal === null ? "—" : `${nota.notaFinal}%`}
+            </span>
+          </div>
+          <div>
+            <p className="font-orbitron text-[10px] tracking-[0.3em] text-slate-500 uppercase">
+              Nota Memory Day
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {nota.notaFinal === null ? "Sem dados suficientes ainda" : "50% entregas · 50% aprendizagem"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6 flex-wrap ml-auto">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Aprendizagem</p>
+            <p className="text-lg font-bold text-slate-700">
+              {nota.qualidadeMedia === null ? "—" : `${nota.qualidadeMedia}%`}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Entregas</p>
+            <p className="text-lg font-bold text-slate-700">
+              {nota.taxaEntrega === null ? "—" : `${nota.taxaEntrega}%`}
+            </p>
+            <p className="text-[11px] text-slate-400">{diasComRegistro}/{diasLetivosDecorridos || "?"} dias</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Dias letivos</p>
+            <p className="text-lg font-bold text-slate-700">{diasLetivosDecorridos}/{diasLetivosTotais}</p>
+            <p className="text-[11px] text-slate-400">{Math.max(0, diasLetivosTotais - diasLetivosDecorridos)} restantes</p>
+          </div>
         </div>
       </div>
 

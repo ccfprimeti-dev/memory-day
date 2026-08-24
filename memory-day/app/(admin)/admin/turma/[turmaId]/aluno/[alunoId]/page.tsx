@@ -4,6 +4,7 @@ import { getSessao } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { AlunoAdminView } from "@/components/admin/AlunoAdminView";
+import { calcularNotaFinal } from "@/lib/notaFinal";
 
 interface Props {
   params: { turmaId: string; alunoId: string };
@@ -19,11 +20,20 @@ export default async function AdminAlunoPage({ params }: Props) {
     select: {
       id:   true,
       nome: true,
-      turma: { select: { nome: true } },
+      turma: { select: { nome: true, diasLetivosTotais: true, diasLetivosDecorridos: true } },
     },
   });
 
   if (!aluno) notFound();
+
+  // Nota Memory Day: qualidade média (aproveitamento) + taxa de entrega (dias com registro / dias letivos decorridos)
+  const registros = await prisma.entry.findMany({
+    where: { alunoId: aluno.id },
+    select: { data: true, aproveitamento: true },
+  });
+  const aproveitamentos = registros.map((r) => r.aproveitamento);
+  const diasComRegistro = new Set(registros.map((r) => r.data)).size;
+  const nota = calcularNotaFinal(aproveitamentos, diasComRegistro, aluno.turma?.diasLetivosDecorridos ?? 0);
 
   // Data de hoje para pré-popular o seletor
   const hoje = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
@@ -48,6 +58,10 @@ export default async function AdminAlunoPage({ params }: Props) {
         nomeTurma={aluno.turma?.nome ?? ""}
         turmaId={params.turmaId}
         dataInicial={hoje}
+        nota={nota}
+        diasComRegistro={diasComRegistro}
+        diasLetivosTotais={aluno.turma?.diasLetivosTotais ?? 0}
+        diasLetivosDecorridos={aluno.turma?.diasLetivosDecorridos ?? 0}
       />
     </div>
   );

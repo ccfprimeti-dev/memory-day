@@ -4,7 +4,10 @@ import { getSessao } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { TurmaPDFButton } from "@/components/admin/TurmaPDFButton";
+import { CalendarioLetivoForm } from "@/components/admin/CalendarioLetivoForm";
 import { LABEL_NIVEL_ENSINO, MAX_AULAS, type NivelEnsino } from "@/types";
+import { calcularNotaFinal } from "@/lib/notaFinal";
+import { corAproveitamento } from "@/lib/nivelUtils";
 
 interface Props {
   params: { turmaId: string };
@@ -53,6 +56,29 @@ export default async function AdminTurmaPage({ params }: Props) {
     }
   }
 
+  // Nota final = qualidade média do aproveitamento + taxa de entrega (dias com registro / dias letivos decorridos)
+  const todosRegistros = alunoIds.length > 0
+    ? await prisma.entry.findMany({
+        where: { alunoId: { in: alunoIds } },
+        select: { alunoId: true, data: true, aproveitamento: true },
+      })
+    : [];
+
+  const registrosPorAluno: Record<string, { aproveitamentos: (number | null)[]; datas: Set<string> }> = {};
+  for (const r of todosRegistros) {
+    if (!registrosPorAluno[r.alunoId]) {
+      registrosPorAluno[r.alunoId] = { aproveitamentos: [], datas: new Set() };
+    }
+    registrosPorAluno[r.alunoId].aproveitamentos.push(r.aproveitamento);
+    registrosPorAluno[r.alunoId].datas.add(r.data);
+  }
+
+  const notaMap: Record<string, ReturnType<typeof calcularNotaFinal>> = {};
+  for (const alunoId of alunoIds) {
+    const dados = registrosPorAluno[alunoId] ?? { aproveitamentos: [], datas: new Set<string>() };
+    notaMap[alunoId] = calcularNotaFinal(dados.aproveitamentos, dados.datas.size, turma.diasLetivosDecorridos);
+  }
+
   return (
     <div>
       {/* Breadcrumb */}
@@ -75,8 +101,15 @@ export default async function AdminTurmaPage({ params }: Props) {
             {LABEL_NIVEL_ENSINO[turma.nivelEnsino as NivelEnsino] ?? turma.nivelEnsino} · {turma.anoLetivo} · {turma.alunos.length} alunos
           </p>
         </div>
-        {/* Botão PDF da turma — componente client para seleção de período */}
-        <TurmaPDFButton turmaId={turma.id} />
+        {/* Ações — calendário letivo e PDF da turma */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <CalendarioLetivoForm
+            turmaId={turma.id}
+            diasLetivosTotais={turma.diasLetivosTotais}
+            diasLetivosDecorridos={turma.diasLetivosDecorridos}
+          />
+          <TurmaPDFButton turmaId={turma.id} />
+        </div>
       </div>
 
       {/* Lista de alunos */}
@@ -95,6 +128,7 @@ export default async function AdminTurmaPage({ params }: Props) {
             {turma.alunos.map((aluno, idx) => {
               const stats = statsMap[aluno.id] ?? { completos: 0, incompletos: 0 };
               const temDados = stats.completos > 0 || stats.incompletos > 0;
+              const nota = notaMap[aluno.id];
               return (
                 <Link key={aluno.id}
                   href={`/admin/turma/${turma.id}/aluno/${aluno.id}`}
@@ -107,6 +141,23 @@ export default async function AdminTurmaPage({ params }: Props) {
                     <p className="text-sm font-semibold text-slate-800 truncate">{aluno.nome}</p>
                     <p className="text-xs text-slate-400 truncate">{aluno.email}</p>
                   </div>
+                  {/* Nota final: qualidade média + taxa de entrega */}
+                  <div
+                    title={nota.notaFinal === null
+                      ? "Sem dados suficientes para calcular"
+                      : `Qualidade: ${nota.qualidadeMedia ?? "—"}% · Entrega: ${nota.taxaEntrega ?? "—"}%`}
+                    className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border"
+                    style={{
+                      backgroundColor: `${corAproveitamento(nota.notaFinal)}14`,
+                      borderColor: `${corAproveitamento(nota.notaFinal)}55`,
+                    }}
+                  >
+                    <span className="text-[10px] font-orbitron tracking-widest uppercase text-slate-500">Nota MD</span>
+                    <span className="font-bold text-sm" style={{ color: corAproveitamento(nota.notaFinal) }}>
+                      {nota.notaFinal === null ? "—" : `${nota.notaFinal}%`}
+                    </span>
+                  </div>
+
                   {/* Badges de entregas: amarelo = incompletos, verde = completos */}
                   <div className="flex items-center gap-2 shrink-0">
                     <div title="Incompletos" className="w-9 h-9 rounded-lg bg-amber-100 border border-amber-300 flex items-center justify-center">

@@ -9,11 +9,16 @@ const BASE_COOKIE = {
   sameSite: "lax" as const,
 };
 
+// 400 dias — teto máximo de expiração de cookie imposto pelos navegadores modernos
+// (Chrome, Edge e Safari recusam/truncam Set-Cookie com validade maior que isso).
+// É o mais próximo de "permanente" que um cookie consegue ser.
+const MAX_AGE_LEMBRAR_ME = 60 * 60 * 24 * 400;
+
 // Opções para leitura (maxAge só importa no momento em que o cookie é gravado)
 export const sessionOptions: SessionOptions = {
   password:      process.env.SESSION_SECRET as string,
   cookieName:    "memory-day-session",
-  cookieOptions: { ...BASE_COOKIE, maxAge: 60 * 60 * 24 * 30 },
+  cookieOptions: { ...BASE_COOKIE, maxAge: MAX_AGE_LEMBRAR_ME },
 };
 
 // Opções usadas no login — escolhe duração conforme "manter login"
@@ -23,8 +28,8 @@ export function sessionOptionsLogin(lembrarMe: boolean): SessionOptions {
     cookieName:    "memory-day-session",
     cookieOptions: {
       ...BASE_COOKIE,
-      // lembrarMe=true → 30 dias; false → sem maxAge (session cookie, some ao fechar o navegador)
-      ...(lembrarMe ? { maxAge: 60 * 60 * 24 * 30 } : {}),
+      // lembrarMe=true → 400 dias (máximo permitido pelos navegadores); false → sem maxAge (session cookie, some ao fechar o navegador)
+      ...(lembrarMe ? { maxAge: MAX_AGE_LEMBRAR_ME } : {}),
     },
   };
 }
