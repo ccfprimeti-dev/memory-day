@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     }
 
     const materias = await prisma.subject.findMany({
-      where:   { turmaId },
+      where:   { turmaId, ativa: true },
       orderBy: { nome: "asc" },
       select: {
         id:         true,

@@ -74,6 +74,7 @@ model Subject {
   nome        String
   turmaId     String  // matéria pertence a uma turma
   professorId String? // professor que a leciona (null = sem professor atribuído)
+  ativa       Boolean @default(true) // false = oculta de novos registros, mas histórico é preservado
 
   turma     Turma        @relation(fields: [turmaId],     references: [id])
   professor User?        @relation("ProfessorMaterias", fields: [professorId], references: [id])

@@ -24,9 +24,9 @@ export default async function AlunoDashboard() {
   const nivelEnsino = turmaAluno?.nivelEnsino ?? "EF2";
   const maxAulas    = MAX_AULAS[nivelEnsino as NivelEnsino] ?? 5;
 
-  // Matérias da turma do aluno
+  // Matérias da turma do aluno — só as ativas (matérias ocultas não aparecem para novos registros)
   const todasMaterias = await prisma.subject.findMany({
-    where: { turmaId: usuario.turmaId ?? "" },
+    where: { turmaId: usuario.turmaId ?? "", ativa: true },
     orderBy: { nome: "asc" },
     select: { id: true, nome: true },
   });

@@ -22,21 +22,21 @@ export async function GET(req: NextRequest) {
           { status: 400 }
         );
       }
-      // Só as matérias que este professor leciona nesta turma
+      // Só as matérias ativas que este professor leciona nesta turma
       const materias = await prisma.subject.findMany({
-        where: { turmaId, professorId: usuario.id },
+        where: { turmaId, professorId: usuario.id, ativa: true },
         orderBy: { nome: "asc" },
         select: { id: true, nome: true, turmaId: true },
       });
       return NextResponse.json(materias);
     }
 
-    // Aluno — matérias da própria turma
+    // Aluno — matérias ativas da própria turma
     if (!usuario.turmaId) {
       return NextResponse.json({ erro: "Aluno sem turma vinculada." }, { status: 400 });
     }
     const materias = await prisma.subject.findMany({
-      where: { turmaId: usuario.turmaId },
+      where: { turmaId: usuario.turmaId, ativa: true },
       orderBy: { nome: "asc" },
       select: { id: true, nome: true, turmaId: true },
     });
