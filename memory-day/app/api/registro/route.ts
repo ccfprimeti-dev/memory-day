@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, jsonInput } from "@/lib/prisma";
 import { getSessao } from "@/lib/auth";
 import { analisarRegistroAluno } from "@/lib/ai";
+import { ehFimDeSemana } from "@/lib/calendario";
 import type { RegistroPayload, FeedbackIA, NivelEnsino } from "@/types";
 import { MAX_AULAS } from "@/types";
 
@@ -41,6 +42,13 @@ export async function POST(req: NextRequest) {
 
   if (!subjectId || !texto?.trim() || !data) {
     return NextResponse.json({ erro: "subjectId, texto e data são obrigatórios" }, { status: 400 });
+  }
+
+  if (ehFimDeSemana(data)) {
+    return NextResponse.json(
+      { erro: "It's the weekend! Memory Day registrations are paused — see you Monday." },
+      { status: 400 }
+    );
   }
 
   if (texto.trim().length < 20) {

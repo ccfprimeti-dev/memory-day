@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { AulaCard } from "@/components/aluno/AulaCard";
 import { SelectSlot } from "@/components/aluno/SelectSlot";
 import { AulaExtra } from "@/components/aluno/AulaExtra";
+import { ehFimDeSemana } from "@/lib/calendario";
 import type { FeedbackIA, NivelEnsino } from "@/types";
 import { LABEL_NIVEL_ENSINO, MAX_AULAS } from "@/types";
 import Link from "next/link";
@@ -15,6 +16,40 @@ export default async function AlunoDashboard() {
   const sessao = await getSessao();
   const usuario = sessao.usuario!;
   const hoje = dataHoje();
+
+  // Fim de semana — sem registro, só a mensagem. Não precisa buscar turma/matérias/registros.
+  if (ehFimDeSemana(hoje)) {
+    return (
+      <div>
+        <div className="mb-8">
+          <p className="font-orbitron text-[10px] tracking-[0.4em] text-amber-600/70 uppercase mb-1">
+            Student Panel
+          </p>
+          <h1 className="text-2xl font-bold text-slate-800">
+            Hello, <span className="text-gradient font-orbitron">{usuario.nome.split(" ")[0]}</span>
+          </h1>
+          <p className="text-slate-500 text-sm mt-1 capitalize">
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long", day: "numeric", month: "long", year: "numeric",
+              timeZone: "America/Sao_Paulo",
+            })}
+          </p>
+        </div>
+
+        <div className="glass-card rounded-xl p-12 text-center">
+          <p className="text-5xl mb-4">🎉</p>
+          <h2 className="font-orbitron text-lg font-bold text-slate-800 mb-3 uppercase tracking-widest">
+            It&apos;s the weekend!
+          </h2>
+          <p className="text-slate-500 text-sm leading-relaxed">
+            No classes, no registrations —<br />
+            just you, relaxing.<br />
+            See you Monday!
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Turma do aluno — determina o nível e o limite de aulas por dia
   const turmaAluno = await prisma.turma.findUnique({

@@ -68,14 +68,44 @@ function labelNivelEnsino(nivelEnsino: string): string {
   return "Ensino Médio";
 }
 
-// Resolve "EF2 + 9º A" → "9º ano do Ensino Fundamental 2"
+// Nomes de turma EM em inglês (padrão desta escola) não trazem número —
+// mapeia a primeira palavra do nome para o ano correspondente dentro do EM.
+const ANO_TURMA_EM: Record<string, number> = {
+  freshman: 1, // 1º EM
+  junior:   2, // 2º EM — esta escola usa "Junior", não "Sophomore"
+  senior:   3, // 3º EM
+};
+
+function primeiraPalavra(nomeTurma: string): string {
+  return nomeTurma.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
+}
+
+// true para turmas nomeadas no padrão de EM em inglês (Freshman/Junior/Senior) —
+// distintas das turmas numeradas ("Year N"), que seguem a escala do Fundamental
+// mesmo que o campo nivelEnsino esteja cadastrado como EM (ex: "Year 9").
+function ehNomeEM(nomeTurma: string): boolean {
+  return primeiraPalavra(nomeTurma) in ANO_TURMA_EM;
+}
+
+// Extrai o número do ano a partir do nome da turma.
+// "Year 9" → 9 (turmas numeradas). "Freshman A" → 1, "Junior" → 2 (turmas EM nomeadas).
+function numeroDaTurma(nomeTurma: string): number {
+  const palavra = primeiraPalavra(nomeTurma);
+  if (palavra in ANO_TURMA_EM) return ANO_TURMA_EM[palavra];
+  const num = nomeTurma.match(/(\d+)/)?.[1];
+  return num ? parseInt(num, 10) : 0;
+}
+
+// Resolve "Year 9" → "9º ano do Ensino Fundamental 2", "Junior" → "2º ano do Ensino Médio"
 // Sem nomeTurma cai no labelNivelEnsino genérico (sem regressão para registros antigos)
 function labelSerie(nivelEnsino: string, nomeTurma?: string): string {
   if (nomeTurma) {
-    const num = nomeTurma.match(/^(\d+)/)?.[1];
-    if (num) {
-      if (nivelEnsino === "EM")  return `${num}º ano do Ensino Médio`;
+    const num = numeroDaTurma(nomeTurma);
+    if (num > 0) {
+      if (ehNomeEM(nomeTurma))   return `${num}º ano do Ensino Médio`;
       if (nivelEnsino === "EF1") return `${num}º ano do Ensino Fundamental 1`;
+      // Turmas numeradas ("Year N") são sempre Fundamental, mesmo com nivelEnsino=EM
+      // cadastrado por decisão administrativa (ex: Year 9) — a régua segue o ano real.
       return `${num}º ano do Ensino Fundamental 2`;
     }
   }
@@ -86,17 +116,21 @@ function labelSerie(nivelEnsino: string, nomeTurma?: string): string {
 // Usada para ancoragem relativa no prompt — a IA sabe exatamente onde o aluno
 // está na progressão sem depender de referências fixas como "6º ano" ou "2º EM".
 function posicaoNaEscala(nivelEnsino: string, nomeTurma?: string): number {
-  const num = nomeTurma ? (parseInt(nomeTurma.match(/^(\d+)/)?.[1] ?? "0") || 0) : 0;
-  if (nivelEnsino === "EM") {
+  if (nomeTurma && ehNomeEM(nomeTurma)) {
+    const num = numeroDaTurma(nomeTurma);
     if (num >= 3) return 7;  // 3º EM
     if (num >= 2) return 6;  // 2º EM
     return 5;                 // 1º EM
   }
-  // EF2: 6º→1, 7º→2, 8º→3, 9º→4
+  // Turmas numeradas ("Year N") — inclui Year 9, que segue o rigor de 9º ano
+  // mesmo quando cadastrada como nivelEnsino=EM.
+  const num = nomeTurma ? numeroDaTurma(nomeTurma) : 0;
   if (num >= 9) return 4;
   if (num >= 8) return 3;
   if (num >= 7) return 2;
-  return 1;  // 6º ano (padrão EF2 sem número)
+  if (num >= 1) return 1;
+  // Sem nome numerado reconhecível — mantém o comportamento anterior baseado no nivelEnsino
+  return nivelEnsino === "EM" ? 5 : 1;
 }
 
 // Régua de profundidade com âncoras LOW/MÉDIO/ALTO para cada grau.
@@ -158,7 +192,7 @@ export async function analisarRegistroAluno(
   textoDoAluno: string,
   nomeMateria: string,
   nivelEnsino: string = "EM",
-  nomeTurma?: string,          // ex: "6º A", "2º B EM" — necessário para proporcionalidade por série
+  nomeTurma?: string,          // ex: "Year 9", "Freshman A", "Junior" — necessário para proporcionalidade por série
   habilidadesEsperadas?: string
 ): Promise<FeedbackIA> {
 
@@ -203,8 +237,14 @@ RÉGUA CENTRAL (aplicada ao Grau ${pos} — ${serie}):
 • Descreveu parcialmente → conteúdo MÉDIO
 • Vago ou genérico ("aprendi bastante", "foi interessante") → conteúdo BAIXO
 
+CASO ESPECIAL — DIA DE PROVA/AVALIAÇÃO: se o aluno descreve que a aula foi de prova, avaliação, teste ou exame (ex: "fizemos prova sobre X", "tivemos avaliação de Y"), é um tipo de registro diferente de uma aula normal — o aluno foi avaliado naquele dia, não teve conteúdo novo para explicar por escrito. Se o aluno nomeou corretamente o TEMA da prova:
+• Isso já conta como evidência concreta válida em "evidencias_concretas" — não exija que ele reexplique o conteúdo cobrado na prova.
+• correcao_conceitual e completude: pontue ALTO — nomear o tema certo é exatamente o que se espera desse tipo de registro, não de uma aula normal.
+• profundidade: avalie só o que o aluno acrescentou além de nomear a prova (como se sentiu, o que estudou, dificuldades). Se não acrescentou nada, profundidade fica MÉDIA, não baixa — a ausência de aprofundamento é esperada num dia de prova.
+Isso só vale se o aluno nomeou o tema da prova — "fizemos prova" sem dizer de quê continua sendo lista vazia, regra normal abaixo.
+
 PASSO 1 — OBRIGATÓRIO antes de pontuar:
-Liste em "evidencias_concretas" os elementos ESPECÍFICOS mencionados: tópicos, conceitos, fórmulas, atividades, obras, autores, exemplos concretos. Afirmações puramente genéricas não entram.
+Liste em "evidencias_concretas" os elementos ESPECÍFICOS mencionados: tópicos, conceitos, fórmulas, atividades, obras, autores, exemplos concretos — inclui o tema de uma prova/avaliação, se for o caso. Afirmações puramente genéricas não entram.
 REGRA INVIOLÁVEL: lista vazia → as três notas de CONTEÚDO devem ser ≤ 20.
 
 PASSO 2 — Pontue com valores irregulares (ex: 37, 63, 78 — nunca só múltiplos de 10):
