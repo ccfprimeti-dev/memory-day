@@ -18,11 +18,6 @@ model Turma {
   codigoConvite String   @unique // reservado para entrada futura por código
   criadoEm      DateTime @default(now())
 
-  // ── Calendário letivo — cadastrado manualmente pelo admin ──
-  // Usado para calcular a taxa de entrega do aluno (dias com registro / dias decorridos).
-  diasLetivosTotais     Int @default(200) // total de dias letivos previstos para o ano
-  diasLetivosDecorridos Int @default(0)   // quantos já se passaram — atualizado periodicamente pelo admin
-
   alunos      User[]           @relation("AlunoTurma")
   professores TurmaProfessor[]
   materias    Subject[]
@@ -142,4 +137,15 @@ model ClassReport {
   materia Subject @relation(fields: [subjectId], references: [id])
 
   @@unique([turmaId, subjectId, data])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Configuração global da escola — hoje guarda só os dias letivos já decorridos
+// no ano, cadastrados manualmente pelo admin na Home. Usado para calcular a
+// taxa de entrega de todos os alunos (dias com registro / dias letivos).
+// Linha única, id fixo "global".
+// ─────────────────────────────────────────────────────────────────────────────
+model Configuracao {
+  id          String @id @default("global")
+  diasLetivos Int    @default(0)
 }

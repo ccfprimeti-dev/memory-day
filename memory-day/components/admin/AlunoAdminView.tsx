@@ -23,10 +23,9 @@ interface Props {
   nomeTurma:   string;
   turmaId:     string;
   dataInicial: string; // YYYY-MM-DD
-  nota:                   NotaFinalAluno;
-  diasComRegistro:        number;
-  diasLetivosTotais:      number;
-  diasLetivosDecorridos:  number;
+  nota:            NotaFinalAluno;
+  diasComRegistro: number;
+  diasLetivos:     number;
 }
 
 const PERIODOS = [
@@ -52,7 +51,7 @@ function corNivel(n: string | null) {
 
 export function AlunoAdminView({
   alunoId, nomeAluno, nomeTurma, turmaId, dataInicial,
-  nota, diasComRegistro, diasLetivosTotais, diasLetivosDecorridos,
+  nota, diasComRegistro, diasLetivos,
 }: Props) {
   const [data,       setData]       = useState(dataInicial);
   const [registros,  setRegistros]  = useState<Registro[]>([]);
@@ -156,7 +155,7 @@ export function AlunoAdminView({
         </div>
       </div>
 
-      {/* Nota Memory Day — 50% qualidade (aproveitamento) + 50% taxa de entrega (dias letivos) */}
+      {/* Nota Memory Day — 75% taxa de entrega (dias letivos) + 25% qualidade (aproveitamento) */}
       <div className="glass-card rounded-xl p-5 mb-6 flex items-center gap-6 flex-wrap">
         <div className="flex items-center gap-3 shrink-0">
           <div
@@ -175,7 +174,7 @@ export function AlunoAdminView({
               Nota Memory Day
             </p>
             <p className="text-xs text-slate-400 mt-0.5">
-              {nota.notaFinal === null ? "Sem dados suficientes ainda" : "50% entregas · 50% aprendizagem"}
+              {nota.notaFinal === null ? "Sem dados suficientes ainda" : "75% entregas · 25% aprendizagem"}
             </p>
           </div>
         </div>
@@ -192,12 +191,7 @@ export function AlunoAdminView({
             <p className="text-lg font-bold text-slate-700">
               {nota.taxaEntrega === null ? "—" : `${nota.taxaEntrega}%`}
             </p>
-            <p className="text-[11px] text-slate-400">{diasComRegistro}/{diasLetivosDecorridos || "?"} dias</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Dias letivos</p>
-            <p className="text-lg font-bold text-slate-700">{diasLetivosDecorridos}/{diasLetivosTotais}</p>
-            <p className="text-[11px] text-slate-400">{Math.max(0, diasLetivosTotais - diasLetivosDecorridos)} restantes</p>
+            <p className="text-[11px] text-slate-400">{diasComRegistro}/{diasLetivos || "?"} dias letivos</p>
           </div>
         </div>
       </div>

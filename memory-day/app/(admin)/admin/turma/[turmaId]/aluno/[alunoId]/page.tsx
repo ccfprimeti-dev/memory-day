@@ -20,20 +20,23 @@ export default async function AdminAlunoPage({ params }: Props) {
     select: {
       id:   true,
       nome: true,
-      turma: { select: { nome: true, diasLetivosTotais: true, diasLetivosDecorridos: true } },
+      turma: { select: { nome: true } },
     },
   });
 
   if (!aluno) notFound();
 
-  // Nota Memory Day: qualidade média (aproveitamento) + taxa de entrega (dias com registro / dias letivos decorridos)
-  const registros = await prisma.entry.findMany({
-    where: { alunoId: aluno.id },
-    select: { data: true, aproveitamento: true },
-  });
+  // Nota Memory Day: taxa de entrega (dias com registro / dias letivos globais) + qualidade média (aproveitamento)
+  const [registros, config] = await Promise.all([
+    prisma.entry.findMany({
+      where: { alunoId: aluno.id },
+      select: { data: true, aproveitamento: true },
+    }),
+    prisma.configuracao.upsert({ where: { id: "global" }, update: {}, create: { id: "global" } }),
+  ]);
   const aproveitamentos = registros.map((r) => r.aproveitamento);
   const diasComRegistro = new Set(registros.map((r) => r.data)).size;
-  const nota = calcularNotaFinal(aproveitamentos, diasComRegistro, aluno.turma?.diasLetivosDecorridos ?? 0);
+  const nota = calcularNotaFinal(aproveitamentos, diasComRegistro, config.diasLetivos);
 
   // Data de hoje para pré-popular o seletor
   const hoje = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
@@ -60,8 +63,7 @@ export default async function AdminAlunoPage({ params }: Props) {
         dataInicial={hoje}
         nota={nota}
         diasComRegistro={diasComRegistro}
-        diasLetivosTotais={aluno.turma?.diasLetivosTotais ?? 0}
-        diasLetivosDecorridos={aluno.turma?.diasLetivosDecorridos ?? 0}
+        diasLetivos={config.diasLetivos}
       />
     </div>
   );

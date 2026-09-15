@@ -4,7 +4,6 @@ import { getSessao } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { TurmaPDFButton } from "@/components/admin/TurmaPDFButton";
-import { CalendarioLetivoForm } from "@/components/admin/CalendarioLetivoForm";
 import { LABEL_NIVEL_ENSINO, MAX_AULAS, type NivelEnsino } from "@/types";
 import { calcularNotaFinal } from "@/lib/notaFinal";
 import { corAproveitamento } from "@/lib/nivelUtils";
@@ -73,10 +72,12 @@ export default async function AdminTurmaPage({ params }: Props) {
     registrosPorAluno[r.alunoId].datas.add(r.data);
   }
 
+  const config = await prisma.configuracao.upsert({ where: { id: "global" }, update: {}, create: { id: "global" } });
+
   const notaMap: Record<string, ReturnType<typeof calcularNotaFinal>> = {};
   for (const alunoId of alunoIds) {
     const dados = registrosPorAluno[alunoId] ?? { aproveitamentos: [], datas: new Set<string>() };
-    notaMap[alunoId] = calcularNotaFinal(dados.aproveitamentos, dados.datas.size, turma.diasLetivosDecorridos);
+    notaMap[alunoId] = calcularNotaFinal(dados.aproveitamentos, dados.datas.size, config.diasLetivos);
   }
 
   return (
@@ -101,15 +102,8 @@ export default async function AdminTurmaPage({ params }: Props) {
             {LABEL_NIVEL_ENSINO[turma.nivelEnsino as NivelEnsino] ?? turma.nivelEnsino} · {turma.anoLetivo} · {turma.alunos.length} alunos
           </p>
         </div>
-        {/* Ações — calendário letivo e PDF da turma */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <CalendarioLetivoForm
-            turmaId={turma.id}
-            diasLetivosTotais={turma.diasLetivosTotais}
-            diasLetivosDecorridos={turma.diasLetivosDecorridos}
-          />
-          <TurmaPDFButton turmaId={turma.id} />
-        </div>
+        {/* PDF da turma */}
+        <TurmaPDFButton turmaId={turma.id} />
       </div>
 
       {/* Lista de alunos */}
