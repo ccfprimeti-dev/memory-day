@@ -5,6 +5,11 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { AlunoAdminView } from "@/components/admin/AlunoAdminView";
 import { calcularNotaFinal } from "@/lib/notaFinal";
+import { buscarBimestres, bimestreAtual, LABEL_BIMESTRE } from "@/lib/bimestre";
+
+function dataHoje(): string {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
+}
 
 interface Props {
   params: { turmaId: string; alunoId: string };
@@ -26,17 +31,24 @@ export default async function AdminAlunoPage({ params }: Props) {
 
   if (!aluno) notFound();
 
-  // Nota Memory Day: taxa de entrega (dias com registro / dias letivos globais) + qualidade média (aproveitamento)
-  const [registros, config] = await Promise.all([
-    prisma.entry.findMany({
-      where: { alunoId: aluno.id },
-      select: { data: true, aproveitamento: true },
-    }),
-    prisma.configuracao.upsert({ where: { id: "global" }, update: {}, create: { id: "global" } }),
-  ]);
+  // Nota Memory Day (bimestre vigente): taxa de entrega + qualidade média, só dos
+  // registros dentro do intervalo do bimestre que contém a data de hoje.
+  const bimestres = await buscarBimestres();
+  const atual     = bimestreAtual(bimestres, dataHoje());
+  const filtroData: { gte?: string; lte?: string } = {};
+  if (atual?.dataInicio) filtroData.gte = atual.dataInicio;
+  if (atual?.dataFim)    filtroData.lte = atual.dataFim;
+
+  const registros = await prisma.entry.findMany({
+    where: {
+      alunoId: aluno.id,
+      ...(Object.keys(filtroData).length > 0 ? { data: filtroData } : {}),
+    },
+    select: { data: true, aproveitamento: true },
+  });
   const aproveitamentos = registros.map((r) => r.aproveitamento);
   const diasComRegistro = new Set(registros.map((r) => r.data)).size;
-  const nota = calcularNotaFinal(aproveitamentos, diasComRegistro, config.diasLetivos);
+  const nota = calcularNotaFinal(aproveitamentos, diasComRegistro, atual?.diasLetivos ?? 0);
 
   // Data de hoje para pré-popular o seletor
   const hoje = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
@@ -63,7 +75,8 @@ export default async function AdminAlunoPage({ params }: Props) {
         dataInicial={hoje}
         nota={nota}
         diasComRegistro={diasComRegistro}
-        diasLetivos={config.diasLetivos}
+        diasLetivos={atual?.diasLetivos ?? 0}
+        labelBimestre={atual ? LABEL_BIMESTRE[atual.numero] : null}
       />
     </div>
   );

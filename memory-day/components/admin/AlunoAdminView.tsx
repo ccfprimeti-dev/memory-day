@@ -26,6 +26,7 @@ interface Props {
   nota:            NotaFinalAluno;
   diasComRegistro: number;
   diasLetivos:     number;
+  labelBimestre:   string | null;
 }
 
 const PERIODOS = [
@@ -51,7 +52,7 @@ function corNivel(n: string | null) {
 
 export function AlunoAdminView({
   alunoId, nomeAluno, nomeTurma, turmaId, dataInicial,
-  nota, diasComRegistro, diasLetivos,
+  nota, diasComRegistro, diasLetivos, labelBimestre,
 }: Props) {
   const [data,       setData]       = useState(dataInicial);
   const [registros,  setRegistros]  = useState<Registro[]>([]);
@@ -170,11 +171,18 @@ export function AlunoAdminView({
             </span>
           </div>
           <div>
-            <p className="font-orbitron text-[10px] tracking-[0.3em] text-slate-500 uppercase">
+            <p className="font-orbitron text-[10px] tracking-[0.3em] text-slate-500 uppercase flex items-center gap-2">
               Nota Memory Day
+              {labelBimestre && (
+                <span className="text-[9px] tracking-widest px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-300 normal-case">
+                  {labelBimestre}
+                </span>
+              )}
             </p>
             <p className="text-xs text-slate-400 mt-0.5">
-              {nota.notaFinal === null ? "Sem dados suficientes ainda" : "75% entregas · 25% aprendizagem"}
+              {!labelBimestre
+                ? "Calendário do bimestre ainda não configurado"
+                : nota.notaFinal === null ? "Sem dados suficientes ainda" : "75% entregas · 25% aprendizagem"}
             </p>
           </div>
         </div>

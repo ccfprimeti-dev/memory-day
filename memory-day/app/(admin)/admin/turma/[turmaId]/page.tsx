@@ -7,6 +7,11 @@ import { TurmaPDFButton } from "@/components/admin/TurmaPDFButton";
 import { LABEL_NIVEL_ENSINO, MAX_AULAS, type NivelEnsino } from "@/types";
 import { calcularNotaFinal } from "@/lib/notaFinal";
 import { corAproveitamento } from "@/lib/nivelUtils";
+import { buscarBimestres, bimestreAtual, LABEL_BIMESTRE } from "@/lib/bimestre";
+
+function dataHoje(): string {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
+}
 
 interface Props {
   params: { turmaId: string };
@@ -55,10 +60,20 @@ export default async function AdminTurmaPage({ params }: Props) {
     }
   }
 
-  // Nota final = qualidade média do aproveitamento + taxa de entrega (dias com registro / dias letivos decorridos)
+  // Nota final (bimestre vigente) = taxa de entrega + qualidade média, só dos registros
+  // dentro do intervalo do bimestre que contém a data de hoje.
+  const bimestres = await buscarBimestres();
+  const atual     = bimestreAtual(bimestres, dataHoje());
+  const filtroData: { gte?: string; lte?: string } = {};
+  if (atual?.dataInicio) filtroData.gte = atual.dataInicio;
+  if (atual?.dataFim)    filtroData.lte = atual.dataFim;
+
   const todosRegistros = alunoIds.length > 0
     ? await prisma.entry.findMany({
-        where: { alunoId: { in: alunoIds } },
+        where: {
+          alunoId: { in: alunoIds },
+          ...(Object.keys(filtroData).length > 0 ? { data: filtroData } : {}),
+        },
         select: { alunoId: true, data: true, aproveitamento: true },
       })
     : [];
@@ -72,12 +87,10 @@ export default async function AdminTurmaPage({ params }: Props) {
     registrosPorAluno[r.alunoId].datas.add(r.data);
   }
 
-  const config = await prisma.configuracao.upsert({ where: { id: "global" }, update: {}, create: { id: "global" } });
-
   const notaMap: Record<string, ReturnType<typeof calcularNotaFinal>> = {};
   for (const alunoId of alunoIds) {
     const dados = registrosPorAluno[alunoId] ?? { aproveitamentos: [], datas: new Set<string>() };
-    notaMap[alunoId] = calcularNotaFinal(dados.aproveitamentos, dados.datas.size, config.diasLetivos);
+    notaMap[alunoId] = calcularNotaFinal(dados.aproveitamentos, dados.datas.size, atual?.diasLetivos ?? 0);
   }
 
   return (
@@ -100,6 +113,7 @@ export default async function AdminTurmaPage({ params }: Props) {
           </h1>
           <p className="text-slate-500 text-sm mt-1">
             {LABEL_NIVEL_ENSINO[turma.nivelEnsino as NivelEnsino] ?? turma.nivelEnsino} · {turma.anoLetivo} · {turma.alunos.length} alunos
+            {atual && <> · nota do <strong className="text-amber-700">{LABEL_BIMESTRE[atual.numero]}</strong></>}
           </p>
         </div>
         {/* PDF da turma */}
@@ -135,11 +149,13 @@ export default async function AdminTurmaPage({ params }: Props) {
                     <p className="text-sm font-semibold text-slate-800 truncate">{aluno.nome}</p>
                     <p className="text-xs text-slate-400 truncate">{aluno.email}</p>
                   </div>
-                  {/* Nota final: qualidade média + taxa de entrega */}
+                  {/* Nota final (bimestre vigente): taxa de entrega + qualidade média */}
                   <div
-                    title={nota.notaFinal === null
+                    title={!atual
+                      ? "Calendário do bimestre ainda não configurado"
+                      : nota.notaFinal === null
                       ? "Sem dados suficientes para calcular"
-                      : `Qualidade: ${nota.qualidadeMedia ?? "—"}% · Entrega: ${nota.taxaEntrega ?? "—"}%`}
+                      : `${LABEL_BIMESTRE[atual.numero]} · Entrega: ${nota.taxaEntrega ?? "—"}% · Qualidade: ${nota.qualidadeMedia ?? "—"}%`}
                     className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border"
                     style={{
                       backgroundColor: `${corAproveitamento(nota.notaFinal)}14`,

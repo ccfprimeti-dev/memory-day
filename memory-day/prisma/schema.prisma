@@ -140,12 +140,15 @@ model ClassReport {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Configuração global da escola — hoje guarda só os dias letivos já decorridos
-// no ano, cadastrados manualmente pelo admin na Home. Usado para calcular a
-// taxa de entrega de todos os alunos (dias com registro / dias letivos).
-// Linha única, id fixo "global".
+// Bimestre — calendário letivo por período, cadastrado manualmente pelo admin
+// na Home (4 linhas fixas, numero 1 a 4). O bimestre "vigente" é escolhido
+// automaticamente pela data de hoje caindo entre dataInicio e dataFim, e seu
+// diasLetivos vira o denominador da taxa de entrega de todos os alunos naquele
+// período (dias com registro, dentro do intervalo, / diasLetivos do bimestre).
 // ─────────────────────────────────────────────────────────────────────────────
-model Configuracao {
-  id          String @id @default("global")
-  diasLetivos Int    @default(0)
+model Bimestre {
+  numero      Int     @id // 1, 2, 3 ou 4
+  diasLetivos Int     @default(0)
+  dataInicio  String? // YYYY-MM-DD
+  dataFim     String? // YYYY-MM-DD
 }

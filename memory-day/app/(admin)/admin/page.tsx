@@ -4,20 +4,26 @@ import { getSessao } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LABEL_NIVEL_ENSINO, type NivelEnsino } from "@/types";
-import { DiasLetivosBox } from "@/components/admin/DiasLetivosBox";
+import { BimestresBox } from "@/components/admin/BimestresBox";
+import { buscarBimestres, bimestreAtual } from "@/lib/bimestre";
+
+function dataHoje(): string {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
+}
 
 export default async function AdminPage() {
   const sessao = await getSessao();
   if (!sessao.usuario || sessao.usuario.papel !== "ADMIN") redirect("/login");
 
-  const [turmas, config] = await Promise.all([
+  const [turmas, bimestres] = await Promise.all([
     prisma.turma.findMany({
       include: {
         _count: { select: { alunos: true, materias: true } },
       },
     }),
-    prisma.configuracao.upsert({ where: { id: "global" }, update: {}, create: { id: "global" } }),
+    buscarBimestres(),
   ]);
+  const atual = bimestreAtual(bimestres, dataHoje());
 
   // Ordem crescente: 1º-5º (EF1) → 6º-9º (EF2) → 1º-2º EM, do menor ano para o maior
   const ORDEM_NIVEL: Record<string, number> = { EF1: 0, EF2: 1, EM: 2 };
@@ -57,7 +63,7 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      <DiasLetivosBox diasLetivos={config.diasLetivos} />
+      <BimestresBox bimestres={bimestres} numeroAtual={atual?.numero ?? null} />
 
       {turmas.length === 0 && (
         <div className="glass-card rounded-xl p-8 text-center">
